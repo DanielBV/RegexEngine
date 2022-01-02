@@ -16,5 +16,7 @@ module.exports = {
     new HtmlWebpackPlugin({
         template: './src/index.html'
       })
-   ]
+   ],
+   resolve: { fallback: { fs: false } },
+   devtool: 'source-map'
 }

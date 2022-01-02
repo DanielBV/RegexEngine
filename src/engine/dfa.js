@@ -1,11 +1,11 @@
-const EPSILON = Symbol("epsilon");
+export const EPSILON = Symbol("epsilon");
 class Matcher {
     matches(char) {
         return false;
     }
 }
 
-class CharacterMatcher extends Matcher{
+export class CharacterMatcher extends Matcher{
     constructor(c) {
         super();
         this.c = c;
@@ -35,7 +35,7 @@ class State{
 
 }
 
-class NFAState extends State{
+export class NFAState extends State{
     compute(c) {
         const matches = [];
         for (const [matcher, toState] of this.transitions) {
@@ -85,7 +85,7 @@ class DFA {
     }
 }
 
-class NFA extends DFA {
+export class NFA extends DFA {
     constructor() {
         super();
     }
@@ -108,6 +108,22 @@ class NFA extends DFA {
 
     getStateByName(name) {
         return this.states[name];
+    }
+
+    /**
+     * It assumes that the names of the states of the nfa and this are unique
+     * @param {*} nfa 
+     * @param {*} starting 
+     */
+    appendNFA(nfa, startingName, matcher) {
+        for (const s in nfa.states) {
+            this.states[s] = nfa.states[s];
+        } 
+        this.addTransition(startingName, nfa.initialState, matcher);
+        // If the joint is and end state, then the end states of the appended nfa are also end states of the fusion.
+        if (this.endingStates.includes(startingName)) {
+            this.endingStates.splice(this.endingStates.indexOf(startingName),1, ...nfa.endingStates);
+        }
     }
 
     compute(string) {
@@ -136,11 +152,3 @@ a.setEndingStates(["q2"]);
 console.log(a.compute("aaaaaaaab"));*/
 
 const b = new NFA();
-b.setInitialState("q0");
-b.setEndingStates(["q3"]);
-b.declareStates("q0", "q1", "q2", "q3");
-b.addTransition("q0", "q1", cf("a"));
-b.addTransition("q1", "q1", cf("a"));
-b.addTransition("q1", "q2", cf("a"));
-b.addTransition("q2", "q3", cf(EPSILON));
-console.log(b.compute("aaa"));
