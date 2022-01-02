@@ -9,8 +9,14 @@ function newState() {
     return c;
 }
 
+function resetStateNumbers() {
+    i = 0;
+}
+
+
 export function regexToNFA(regexAST) {
     let nfa = null;
+    resetStateNumbers();
     for (const c of regexAST.subpatterns) {
         let base;
         if (c.child instanceof AtomicPattern) {

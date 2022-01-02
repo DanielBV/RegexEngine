@@ -1,8 +1,5 @@
 import React from "react";
 import ReactDOM from "react-dom";
-import parseRegex from "./grammar/parser";
+import MainPage from "./page/MainPage";
 
-console.log(parseRegex("aeae"));
-const App = () => <div>Hello world</div>;
-
-ReactDOM.render(<App/>, document.getElementById("root"));
+ReactDOM.render(<MainPage/>, document.getElementById("root"));

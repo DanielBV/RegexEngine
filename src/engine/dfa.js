@@ -3,6 +3,10 @@ class Matcher {
     matches(char) {
         return false;
     }
+
+    get label() {
+        return "undefined-matcher"
+    }
 }
 
 export class CharacterMatcher extends Matcher{
@@ -13,6 +17,10 @@ export class CharacterMatcher extends Matcher{
 
     matches(char) {
         return this.c === char;
+    }
+
+    get label() {
+        return this.c === EPSILON ? "ε" : this.c;
     }
 }
 
