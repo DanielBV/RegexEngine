@@ -134,6 +134,25 @@ export class NFA extends DFA {
         }
     }
 
+    /** This should only be used when:
+     * - There are no transitions in otherNFA that go to otherNFA's initial state
+     * - The nfa (this) 'unionState' doesn't have transitions
+     * The main use of this method in thompson constructions to avoid unnecessary epsilon transitions.
+     * If the assertios aren't true, the union might not be correct.
+     */
+    thompsonAppendNFA(otherNfa, unionState) {
+        for (const s in otherNfa.states) {
+            this.states[s] = otherNfa.states[s];
+        } 
+        delete this.states[otherNfa.initialState]; // This state is simplified
+        for (const [matcher, toTransition] of otherNfa.states[otherNfa.initialState].transitions)
+            this.addTransition(unionState, toTransition.name, matcher);
+        // If the unionState is and end state, then the end states of the appended nfa are also end states of the fusion.
+        if (this.endingStates.includes(unionState)) {
+            this.endingStates.splice(this.endingStates.indexOf(unionState),1, ...otherNfa.endingStates);
+        }
+    }
+
     compute(string) {
         let states = new Set([this.states[this.initialState]]);
         states = NFA.calculateEpsilonClosure(states);

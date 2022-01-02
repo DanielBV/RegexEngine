@@ -38,7 +38,7 @@ export function regexToNFA(regexAST) {
         if (nfa === null) 
             nfa = base 
         else 
-            nfa.appendNFA(base, nfa.endingStates[0], new CharacterMatcher(EPSILON));
+            nfa.thompsonAppendNFA(base, nfa.endingStates[0]);
     }
     return nfa;
 }
