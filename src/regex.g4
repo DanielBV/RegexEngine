@@ -1,7 +1,8 @@
 
 grammar regex;
 
-regex: expr+;
+regex: expr* alternative*;
+alternative: '|' expr*;
 
 expr: subexpr quantifier?;
 /* TODO: 

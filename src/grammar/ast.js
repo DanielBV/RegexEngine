@@ -16,6 +16,12 @@ export class Expression {
     }
 }
 
+export class RegexAlternative {
+    constructor(...alternatives) {
+        this.alternatives = alternatives;
+    }
+}
+
 export class AtomicPattern {
     constructor(char) {
         this.char = char;

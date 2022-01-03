@@ -1,4 +1,4 @@
-import { AtomicPattern } from "../grammar/ast";
+import { AtomicPattern, Regex, RegexAlternative } from "../grammar/ast";
 import { ASTERISK, PLUS } from "../grammar/astBuilder";
 import { CharacterMatcher, EPSILON, NFA } from "./dfa";
 
@@ -13,15 +13,25 @@ function resetStateNumbers() {
     i = 0;
 }
 
+export function regexToNFA(regexAST, resetNumbers=true) {
+    if (regexAST instanceof RegexAlternative) 
+        return alternativeToNFA(regexAST,resetNumbers);
+    else 
+        return singleRegexToNFA(regexAST, resetNumbers);
+}
 
-export function regexToNFA(regexAST) {
+export function singleRegexToNFA(regexAST, resetNumbers=true) {
     let nfa = null;
-    resetStateNumbers();
+    if (resetNumbers) resetStateNumbers();
     for (const c of regexAST.subpatterns) {
         let baseBuilder, base;
         if (c.child instanceof AtomicPattern) {
             baseBuilder = () => atomicPatternNFA(c.child.char);
-        }
+        } else if (c.child instanceof RegexAlternative) {  // Groups
+            baseBuilder = () => alternativeToNFA(c.child, false);
+        } else if (c.child instanceof Regex) // Groups
+            baseBuilder = () => regexToNFA(c.child, false);
+
 
         if (c.quantifier === ASTERISK) {
             base = asterisk(baseBuilder);
@@ -66,6 +76,27 @@ function atomicPatternNFA(character) {
     nfa.addTransition(a,b, new CharacterMatcher(character));
     return nfa;
 }
+
+function alternativeToNFA(alternativeAst, resetNumbers=true) {
+    if (resetNumbers) resetStateNumbers();
+    const nfa = new NFA();
+    const start = newState();
+    nfa.addState(start);
+    nfa.setInitialState(start);
+    nfa.setEndingStates([]);
+    const endingStates = [];
+    for (let i = 0; i < alternativeAst.alternatives.length; i++) {
+        const tmp = regexToNFA(alternativeAst.alternatives[i],false);
+        endingStates.push(...tmp.endingStates);
+        nfa.thompsonAppendNFA(tmp, start);
+    }
+    const end = newState();
+    nfa.addState(end);
+    endingStates.forEach(x => nfa.addTransition(x, end, new CharacterMatcher(EPSILON)));
+    nfa.setEndingStates([end]);
+    return nfa;
+}
+
 
 function NFAToDFA() {
     //TODO

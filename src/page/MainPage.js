@@ -12,6 +12,7 @@ export default class MainPage extends React.Component {
 
     diagramFromRegex(regex) {
         const ast = parseRegex(regex);
+        console.log(ast);
         const nfa = regexToNFA(ast);
         const dot = nfaToDot(nfa);
         return <div><VizWrapper dot={dot}></VizWrapper></div>;        
