@@ -9,11 +9,15 @@ function newState() {
     return c;
 }
 
-let g = 0;
+let g = 1;
 function newGroup() {
     const c = g;
     g++;
     return c;
+}
+
+function resetGroupNumbers() {
+    g = 1;
 }
 
 function resetStateNumbers() {
@@ -25,40 +29,48 @@ export class ConversionBuilder {
         this.nfaFactory = nfaFactory;
     }
 
-    regexToNFA(regexAST, resetNumbers=true, isCapturingGroup=false) {
+    regexToNFA(regexAST, resetNumbers=true, isCapturingGroup=null) {
         if (regexAST instanceof RegexAlternative) 
             return this._alternativeToNFA(regexAST,resetNumbers, isCapturingGroup);
         else 
             return this._singleRegexToNFA(regexAST, resetNumbers, isCapturingGroup);
     }
 
-    _singleRegexToNFA(regexAST, resetNumbers=true, isCapturingGroup=false) {
+    _singleRegexToNFA(regexAST, resetNumbers=true, capturingGroupNumber=null) {
         let nfa = null;
-        if (resetNumbers) resetStateNumbers();
+        if (resetNumbers) {
+            resetStateNumbers();
+            resetGroupNumbers();
+        }
         for (const c of regexAST.subpatterns) {
-            let baseBuilder, base;
+            let baseBuilder, base, baseIsCapturing;
             if (c.child instanceof AtomicPattern) {
                 baseBuilder = () => this._atomicPatternNFA(c.child.char);
             } else if (c.child instanceof RegexAlternative) {  // Groups
-                baseBuilder = () => this._alternativeToNFA(c.child, false, true);
-            } else if (c.child instanceof Regex) // Groups
-                baseBuilder = () => this._regexToNFA(c.child, false);
+                baseIsCapturing = true;
+                baseBuilder = (groupNumber) => this._alternativeToNFA(c.child, false, groupNumber);
+            } else if (c.child instanceof Regex) { // Groups
+                baseIsCapturing = true;
+                baseBuilder = (groupNumber) => this.regexToNFA(c.child, false, groupNumber);
+            }
     
     
             if (c.quantifier === ASTERISK) {
-                base = this._asterisk(baseBuilder);
+                base = this._asterisk(() => baseBuilder(baseIsCapturing ? newGroup() : null));
             } else if (c.quantifier === PLUS) {
-                base = baseBuilder();
-                const extraPart = this._asterisk(baseBuilder);
+                const group = baseIsCapturing ? newGroup() : null;
+                base = baseBuilder(group);
+                const extraPart = this._asterisk(() => baseBuilder(group));
                 base.thompsonAppendNFA(extraPart, base.endingStates[0]);
             } else {
-                base = baseBuilder();
+                base = baseBuilder(baseIsCapturing ? newGroup() : null);
             }
             if (nfa === null) 
                 nfa = base 
             else 
                 nfa.thompsonAppendNFA(base, nfa.endingStates[0]);
         }
+        if (capturingGroupNumber !== null && nfa.allowsCapturingGroups()) nfa.addGroup(nfa.initialState, nfa.endingStates[0], capturingGroupNumber); 
         return nfa;
     }
 
@@ -90,8 +102,11 @@ export class ConversionBuilder {
         return nfa;
     }
 
-    _alternativeToNFA(alternativeAst, resetNumbers=true, isGroup=false) {
-        if (resetNumbers) resetStateNumbers();
+    _alternativeToNFA(alternativeAst, resetNumbers=true, capturingGroupNumber=null) {
+        if (resetNumbers) {
+            resetStateNumbers();
+            resetGroupNumbers();
+        }
         const nfa = this.nfaFactory();
         const start = newState();
         nfa.addState(start);
@@ -99,7 +114,7 @@ export class ConversionBuilder {
         nfa.setEndingStates([]);
         const endingStates = [];
         for (let i = 0; i < alternativeAst.alternatives.length; i++) {
-            const tmp = this.regexToNFA(alternativeAst.alternatives[i],false);
+            const tmp = this.regexToNFA(alternativeAst.alternatives[i], false);
             endingStates.push(...tmp.endingStates);
             nfa.thompsonAppendNFA(tmp, start);
         }
@@ -107,7 +122,7 @@ export class ConversionBuilder {
         nfa.addState(end);
         endingStates.forEach(x => nfa.addTransition(x, end, new CharacterMatcher(EPSILON)));
         nfa.setEndingStates([end]);
-        if (isGroup && nfa.allowsCapturingGroups()) nfa.addGroup(start, end);
+        if (capturingGroupNumber !== null && nfa.allowsCapturingGroups()) nfa.addGroup(start, end, capturingGroupNumber);
         return nfa;
     }
 }

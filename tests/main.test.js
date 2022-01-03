@@ -2,6 +2,37 @@
 import { ConversionBuilder, regexToNFA } from '../src/engine/conversions';
 import { CapturingNFT, NFA } from '../src/engine/dfa';
 import parseRegex from '../src/grammar/parser';
+
+class AlgorithmWrapper {
+  getBuilder() {
+    return null;
+  }
+
+  hasMatched() {
+    return false;
+  }
+}
+
+class NFAWrapper extends AlgorithmWrapper {
+  getBuilder() {
+    return new ConversionBuilder(() => new NFA());
+  }
+
+  hasMatched(computedResult) {
+    return computedResult;
+  }
+}
+
+class NFTWrapper extends AlgorithmWrapper {
+  getBuilder() {
+    return new ConversionBuilder(() => new CapturingNFT())
+  }
+
+  hasMatched(computedResult) {
+    return computedResult.success;
+  }
+}
+
 test('test basic regex', () => {
   const CASES = [
     ["aaa", "aaa", true],
@@ -15,14 +46,13 @@ test('test basic regex', () => {
     ["a(|b)a", "aa", true],
     ["||||||", "", true]
   ];
-  const ALGORITHMS = [() => new NFA(), 
-    () => new CapturingNFT()]
+  const ALGORITHMS = [ new NFAWrapper(), new NFTWrapper()];
   for (const algorithm of ALGORITHMS) {
     for (const [regex, string, result] of CASES) {
       const ast = parseRegex(regex);
-      const cb = new ConversionBuilder(algorithm);
+      const cb = algorithm.getBuilder();
       const nfa = cb.regexToNFA(ast);
-      expect(nfa.compute(string)).toBe(result);
+      expect(algorithm.hasMatched(nfa.compute(string))).toBe(result);
     }
   }  
 });
