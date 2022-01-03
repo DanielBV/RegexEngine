@@ -98,6 +98,10 @@ export class NFA extends DFA {
         super();
     }
 
+    allowsCapturingGroups() {
+        return false;
+    }
+
     addState(name) {
         this.states[name] = new NFAState(name);
     }
@@ -153,6 +157,11 @@ export class NFA extends DFA {
         }
     }
 
+    /* 
+        Computes it in a similar way to a Breadth first search, but the machine is in multiple states at the same time.
+         This avoids problems like catastrophic backtracking because it doesn't require backtracking. 
+        But this algorithm also doesn't allow capturing groups :(
+    */
     compute(string) {
         let states = new Set([this.states[this.initialState]]);
         states = NFA.calculateEpsilonClosure(states);
@@ -164,18 +173,58 @@ export class NFA extends DFA {
         }
         return Array.from(states).some(x => this.endingStates.includes(x.name));
     }
-
 }
 
+export class CapturingNFTState extends NFAState {
+    constructor(name) {
+        super(name);
+        this.startsGroups = [];
+        this.endsGroups = [];
+    }
 
-const cf = (c) => new CharacterMatcher(c);
-/*const a = new DFA();
-a.declareStates("q0", "q1", "q2");
-a.addTransition("q0", "q1", cf("a"));
-a.addTransition("q1", "q2", cf("b"));
-a.addTransition("q1", "q1", cf("a"));
-a.setInitialState("q0");
-a.setEndingStates(["q2"]);
-console.log(a.compute("aaaaaaaab"));*/
+    addStartGroup(group) {
+        this.startsGroups.push(group);
+    }
 
-const b = new NFA();
+    addEndGroup(group) {
+        this.endsGroups.push(group);
+    }
+}
+
+export class CapturingNFT extends NFA{
+    allowsCapturingGroups() {
+        return true;
+    }
+
+    addState(name) {
+        this.states[name] = new CapturingNFTState(name);
+    }
+
+    compute(string) {
+        return this.recursiveCompute(string, this.states[this.initialState]);
+    }
+
+    // TODO fix thompson append to  keep capturing groups
+    recursiveCompute(remainingString, currentState) {
+        const epsilonClosure = NFA.calculateEpsilonClosure([currentState]);
+        if (remainingString.length === 0) {
+            console.log("YEI BOY")
+            return Array.from(epsilonClosure).some(x => this.endingStates.includes(x.name));
+        }
+        const input = remainingString[0];
+        // Since it takes into account all the closure at the same time it doesn't have the problem of epsilon loops
+        for (const state of epsilonClosure) {
+            for (const [matcher, toState] of state.transitions) {
+                if (matcher.matches(input)) {
+                    const niceTry = this.recursiveCompute(remainingString.substring(1), toState);
+                    if (niceTry) return niceTry;
+                }
+            }
+        }
+    }
+
+    addGroup(start, end, group) {
+        this.states[start].addStartGroup(group);
+        this.states[end].addEndGroup(group);
+    }
+}

@@ -10,6 +10,5 @@ export default function nfaToDot(nfa) {
             dot += `    ${state.name} -> ${toState.name} [label = "${matcher.label}"]; \n`
         }
     }
-    console.log(dot);
     return dot + "}";
 }

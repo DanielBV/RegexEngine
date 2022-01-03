@@ -1,5 +1,6 @@
 
-import { regexToNFA } from '../src/engine/conversions';
+import { ConversionBuilder, regexToNFA } from '../src/engine/conversions';
+import { CapturingNFT, NFA } from '../src/engine/dfa';
 import parseRegex from '../src/grammar/parser';
 test('test basic regex', () => {
   const CASES = [
@@ -11,11 +12,17 @@ test('test basic regex', () => {
     ["a(a|b)+a", "abbababababababababababbbababaa", true],
     ["a|", "", true],
     ["a(b|)a", "aa", true],
-    ["a(|b)a", "aa", true]
+    ["a(|b)a", "aa", true],
+    ["||||||", "", true]
   ];
-  for (const [regex, string, result] of CASES) {
-    const ast = parseRegex(regex);
-    const nfa = regexToNFA(ast);
-    expect(nfa.compute(string)).toBe(result);
-  }
+  const ALGORITHMS = [() => new NFA(), 
+    () => new CapturingNFT()]
+  for (const algorithm of ALGORITHMS) {
+    for (const [regex, string, result] of CASES) {
+      const ast = parseRegex(regex);
+      const cb = new ConversionBuilder(algorithm);
+      const nfa = cb.regexToNFA(ast);
+      expect(nfa.compute(string)).toBe(result);
+    }
+  }  
 });
