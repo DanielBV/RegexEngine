@@ -7,6 +7,11 @@ export const ASTERISK = Symbol("*");
 export const PLUS = Symbol("+");
 
 export class AstBuilder extends RegexVisitor {
+
+    visitMain(ctx) {
+        return this.visit(ctx.regex());
+    }
+
     visitRegex(ctx) {
         if (ctx.alternative().length === 0)
             return new Regex(this.visit(ctx.expr()));

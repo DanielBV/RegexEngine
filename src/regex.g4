@@ -1,6 +1,8 @@
 
 grammar regex;
 
+main: regex EOF;
+
 regex: expr* alternative*;
 alternative: '|' expr*;
 
@@ -14,14 +16,16 @@ subexpr:
     regexGroup #groupPattern
     | CHAR #atomicPattern;
 
-regexGroup: '(' regex ')';
+regexGroup: OPEN_PAR regex CLOSE_PAR;
 
 quantifier:
     ASTERISK #asteriskQuantifier
     | PLUS #plusQuantifier;
-    
 
+WS: [ \n\t\r]+ -> skip;
 
+OPEN_PAR: '(';
+CLOSE_PAR: ')';
 CHAR: [a-zA-Z];
 ASTERISK: '*';
 PLUS: '+';

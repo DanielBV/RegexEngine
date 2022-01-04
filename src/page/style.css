@@ -1,0 +1,23 @@
+
+
+.regexInput{
+    border-top: 0px;
+    border-left: 0px;
+    border-right: 0px;
+}
+
+.regexInput:focus{
+    border-top: 0px;
+    border-left: 0px;
+    border-right: 0px;
+    box-shadow:none !important;
+}
+
+.textInput:focus {
+    box-shadow:none !important;
+}
+
+#regexLabel{
+    margin: auto;
+    color: #6c757d;
+}
