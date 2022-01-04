@@ -16,22 +16,6 @@ export default class MainPage extends React.Component {
         this.state = {regex: "", string:"", matches: [], result: null};
     }
 
-    diagramFromRegex(regex) {
-        const ast = parseRegex(regex);
-        const cb = new ConversionBuilder( () => new CapturingNFT());
-        const nfa = cb.regexToNFA(ast);
-        const dot = nfaToDot(nfa);
-        return <div><VizWrapper dot={dot}></VizWrapper></div>;        
-    }
-
-    compute(regex, string) {
-        const ast = parseRegex(regex);
-        const cb = new ConversionBuilder( () => new CapturingNFT());
-        const nfa = cb.regexToNFA(ast);
-        const result = nfa.compute(string);
-        this.setState({result: result.success, matches: result.GROUP_MATCHES});
-    }
-
     parseRegex(regex) {
         try {
             const ast = parseRegex(regex);
@@ -63,7 +47,7 @@ export default class MainPage extends React.Component {
             
             
         } 
-        return <div>
+        return <div id="page">
             <Navbar bg="dark" variant="dark">
                 <Container>
                 <Navbar.Brand> Regex Engine</Navbar.Brand>
@@ -72,26 +56,35 @@ export default class MainPage extends React.Component {
                 </Nav>
                 </Container>
             </Navbar>
-            <Container style={{marginTop: "20px"}}>
-                    <InputGroup className="mb-3">
-            <div id="regexLabel">Regex:</div>
-            <FormControl isInvalid={!valid} className="regexInput"
-            aria-label="Default"
-            aria-describedby="inputGroup-sizing-default"
-            value={this.state.regex}  placeholder="((a|b)+)"
-                        onChange={(x) => this.setState({regex: x.target.value,  result: null, matches: []})}
-            /></InputGroup>
-             <Form.Control
-                className="textInput"
-                as="textarea"
-                placeholder="Input text"
-                style={{ height: '100px' }}
-                value={this.state.string} 
-                onChange={(x) => this.setState({string: x.target.value})}
-                />
-            {diagram}
-            {result}
-            </Container>
+            <div id="content">
+                <Container style={{marginTop: "20px"}}>
+                        <InputGroup className="mb-3">
+                <div id="regexLabel">Regex:</div>
+                <FormControl isInvalid={!valid} className="regexInput"
+                aria-label="Default"
+                aria-describedby="inputGroup-sizing-default"
+                value={this.state.regex}  placeholder="((a|b)+)"
+                            onChange={(x) => this.setState({regex: x.target.value,  result: null, matches: []})}
+                /></InputGroup>
+                <Form.Control
+                    className="textInput"
+                    as="textarea"
+                    placeholder="Input text"
+                    style={{ height: '100px' }}
+                    value={this.state.string} 
+                    onChange={(x) => this.setState({string: x.target.value})}
+                    />
+                {result}
+                
+                </Container>
+            </div>
+            <div class="diagramContainer">
+               {/* <div id="nfaHeader">
+                        <h5 id="nfaLabel">NFA</h5>
+    </div>*/}
+                    {diagram}
+                </div>
+            
         </div>
     }
 }

@@ -35,9 +35,16 @@ export class VizWrapper extends React.Component{
       console.error(error);
     });
   }
-
-    render() {
+  
+    render() {    
      
-        return <div id="vizwrapper" style={{width:"100%", overflow: "auto"}} ref={this.wrapperRef}>{this.state.element}</div>
+        return <div id="diagramWrapper" >
+          <div id="nfaHeader">
+            <h5 id="nfaLabel">NFA</h5>
+          </div>
+          <div id="vizwrapper"  ref={this.wrapperRef} style={{ width:`${100*this.state.scale}%`}}>
+            {this.state.element}
+          </div>
+          </div>
     }
 }
