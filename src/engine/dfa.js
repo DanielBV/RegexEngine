@@ -83,11 +83,11 @@ class DFA {
     compute(string) {
         let s = this.states[this.initialState];
         for (let i = 0; i < string.length ; i++) {
-            console.log(`Current state ---> ${s.name}`);
+            //console.log(`Current state ---> ${s.name}`);
             s = s.compute(string[i]);
             if (s === null)
                 return false;
-            console.log(`Next state ---> ${s.name}`);
+            //console.log(`Next state ---> ${s.name}`);
         }
         return this.endingStates.includes(s.name);
     }
@@ -166,7 +166,6 @@ export class NFA extends DFA {
         let states = new Set([this.states[this.initialState]]);
         states = NFA.calculateEpsilonClosure(states);
         for (let i = 0; i < string.length ; i++) {
-            console.log(`States in ${i}--> ${Array.from(states).map(x => x.name).join(", ")}`);
             const tmp = new Set();
             for (const s of states) s.compute(string[i]).forEach(x => tmp.add(x));
             states = NFA.calculateEpsilonClosure(tmp);
@@ -210,7 +209,6 @@ export class CapturingNFT extends NFA{
         }
         for (const group of currentState.endsGroups) {
             memory.GROUP_MATCHES[group] = [group, memory.ACTIVE_STATES[group], i];
-            console.log(`Finished group ${group} starting at ${memory.ACTIVE_STATES[group]} and ending at ${i}`);
         }
     }
 
@@ -238,13 +236,11 @@ export class CapturingNFT extends NFA{
      */
     recursiveCompute(remainingString, currentState, memory, i) {
         this.computeGroups(currentState, memory, i);
-        console.log(`Current State: '${currentState.name}'. Input: '${remainingString[0]}'. Total: '${remainingString}'`)
          //TODO no tengo muy claro si esto dara problemas si justo el último estado acaba un grupo
         //const epsilonClosure = NFA.calculateEpsilonClosure([currentState]);
         if (remainingString.length === 0 && this.endingStates.includes(currentState.name)) {
             // The closure can't be used here because then it wouldn't compute the groups of the final state. And computing the groups of all epsilon transitions
             // could lead to invalid results
-            console.log("FIIIIN avoiding backtracking at start:" + currentState.name);
             memory.success = this.endingStates.includes(currentState.name);
             return memory;
         }
@@ -253,7 +249,6 @@ export class CapturingNFT extends NFA{
         // Since it takes into account all the closure at the same time it doesn't have the problem of epsilon loops
         for (const [matcher, toState] of currentState.transitions) {
             if (matcher.matches(input)) { // Non-epsilon
-                console.log(`${currentState.name} --> ${toState.name}`)
                 const copyMemory = JSON.parse(JSON.stringify(memory));
                 copyMemory.EPSILON_VISITED = [];
                 const niceTry = this.recursiveCompute(remainingString.substring(1), toState, copyMemory, i+1);
@@ -285,7 +280,6 @@ export class CapturingNFT extends NFA{
         if (remainingString.length === 0) {
             // The closure can't be used here because then it wouldn't compute the groups of the final state. And computing the groups of all epsilon transitions
             // could lead to invalid results
-            console.log("FIIIIN forzado. No hay más opciones:" + currentState.name);
             memory.success = this.endingStates.includes(currentState.name);
             return memory;
         }
