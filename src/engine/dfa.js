@@ -20,7 +20,8 @@ export class CharacterMatcher extends Matcher{
     }
 
     get label() {
-        return this.c === EPSILON ? "ε" : this.c;
+        return this.c === EPSILON ? "ε" :
+        this.c === "\\" ? "\\\\" : this.c;
     }
 }
 

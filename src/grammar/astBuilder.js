@@ -40,6 +40,10 @@ export class AstBuilder extends RegexVisitor {
         return new AtomicPattern(ctx.getText());
     }
 
+    visitEscapedAtomicPattern(ctx) {
+        return new AtomicPattern(ctx.getText().substring(1));
+    }
+
     visitAsteriskQuantifier() {
         return ASTERISK;
     }

@@ -14,7 +14,8 @@ expr: subexpr quantifier?;
 */
 subexpr: 
     regexGroup #groupPattern
-    | CHAR #atomicPattern;
+    | CHAR #atomicPattern
+    | ESCAPED_CHAR #escapedAtomicPattern;
 
 regexGroup: OPEN_PAR regex CLOSE_PAR;
 
@@ -24,8 +25,10 @@ quantifier:
 
 WS: [ \n\t\r]+ -> skip;
 
+BACKSLASH : '\\';
+ESCAPED_CHAR: BACKSLASH (BACKSLASH | OPEN_PAR | CLOSE_PAR | ASTERISK | PLUS);
 OPEN_PAR: '(';
 CLOSE_PAR: ')';
-CHAR: [a-zA-Z];
 ASTERISK: '*';
 PLUS: '+';
+CHAR: .;
