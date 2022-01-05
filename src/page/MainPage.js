@@ -30,7 +30,7 @@ export default class MainPage extends React.Component {
 
     render() {
         const {valid, nfa, dot} = this.parseRegex(this.state.regex);
-        let diagram = null, result = null;
+        let diagram = null, resultContent = <div></div>;
         if(valid && nfa) {
             diagram = this.state.regex.trim() !== "" ? <VizWrapper dot={dot}></VizWrapper> : <div/>; 
 
@@ -39,25 +39,27 @@ export default class MainPage extends React.Component {
                 const matched =  match.success; 
                 const matches = match.GROUP_MATCHES;
                 const matchesComponent = Object.values(matches).map(([group, init, end]) => <div>Group {group}: {this.state.string.substring(init,end)}</div>);
-                result =  <div>
-                <div>Result: {`${matched}`}</div>
-                <div>Matches: {matchesComponent}</div>
+                resultContent =  <div class="result">
+                <div>Matched: {`${matched}`}</div>
+                <div>Groups: {matchesComponent}</div>
             </div>;
-            }
             
+            }
+          
             
         } 
+        const result = <div class="resultSection">
+            <h5 id="resultHeader">Result</h5>
+                {resultContent}
+            </div>;
         return <div id="page">
-            <Navbar bg="dark" variant="dark">
-                <Container>
-                <Navbar.Brand> Regex Engine</Navbar.Brand>
+            <Navbar className="navBar" bg="dark" variant="dark">
+                <Navbar.Brand className="logo"> Regex Engine</Navbar.Brand>
                 <Nav className="me-auto">
                 <Nav.Link href="https://github.com/DanielBV/RegexEngine">Github</Nav.Link>
                 </Nav>
-                </Container>
             </Navbar>
             <div id="content">
-                <Container style={{marginTop: "20px"}}>
                         <InputGroup className="mb-3">
                 <div id="regexLabel">Regex:</div>
                 <FormControl isInvalid={!valid} className="regexInput"
@@ -66,22 +68,21 @@ export default class MainPage extends React.Component {
                 value={this.state.regex}  placeholder="((a|b)+)"
                             onChange={(x) => this.setState({regex: x.target.value,  result: null, matches: []})}
                 /></InputGroup>
-                <Form.Control
-                    className="textInput"
-                    as="textarea"
-                    placeholder="Input text"
-                    style={{ height: '100px' }}
-                    value={this.state.string} 
-                    onChange={(x) => this.setState({string: x.target.value})}
-                    />
-                {result}
-                
-                </Container>
+                <div id="inputResultContainer">
+                    <Form.Control
+                        className="textInput"
+                        as="textarea"
+                        placeholder="Input text"
+                        value={this.state.string} 
+                        onChange={(x) => this.setState({string: x.target.value})}
+                        />
+                    {result}
+                </div> 
             </div>
             <div class="diagramContainer">
-               {/* <div id="nfaHeader">
-                        <h5 id="nfaLabel">NFA</h5>
-    </div>*/}
+            <div id="nfaHeader">
+            <h5 id="nfaLabel">NFA</h5>
+          </div>
                     {diagram}
                 </div>
             
