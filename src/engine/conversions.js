@@ -63,14 +63,14 @@ export class ConversionBuilder {
                 const group = baseIsCapturing ? newGroup() : null;
                 base = baseBuilder(group);
                 const extraPart = this._asterisk(() => baseBuilder(group));
-                base.appendNFA(extraPart, base.endingStates[0]);
+                base.thompsonAppendNFA(extraPart, base.endingStates[0]);
             } else {
                 base = baseBuilder(baseIsCapturing ? newGroup() : null);
             }
             if (nfa === null) 
                 nfa = base 
             else 
-                nfa.appendNFA(base, nfa.endingStates[0]);
+                nfa.thompsonAppendNFA(base, nfa.endingStates[0]);
         }
         if (capturingGroupNumber !== null && nfa.allowsCapturingGroups()) nfa.addGroup(nfa.initialState, nfa.endingStates[0], capturingGroupNumber); 
         return nfa;

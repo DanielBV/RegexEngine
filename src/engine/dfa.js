@@ -255,7 +255,27 @@ export class CapturingNFT extends NFA{
         }
     }
 
-    // TODO fix thompson append to  keep capturing groups
+      /**
+       * Tis is the same as hNFA.thompsonAppendNFA and has the same restrictions.
+       * The only difference is this also assings the start/endGroups of the deleted state to its replacement
+        */
+       thompsonAppendNFA(otherNfa, unionState) {
+        for (const s in otherNfa.states) {
+            this.states[s] = otherNfa.states[s];
+        } 
+        delete this.states[otherNfa.initialState]; // This state is simplified
+        for (const [matcher, toTransition] of otherNfa.states[otherNfa.initialState].transitions)
+            this.addTransition(unionState, toTransition.name, matcher);
+        for (const group of otherNfa.states[otherNfa.initialState].startsGroups)
+            this.states[unionState].addStartGroup(group);
+        for (const group of otherNfa.states[otherNfa.initialState].endsGroups)
+            this.states[unionState].addEndGroup(group);
+        // If the unionState is and end state, then the end states of the appended nfa are also end states of the fusion.
+        if (this.endingStates.includes(unionState)) {
+            this.endingStates.splice(this.endingStates.indexOf(unionState),1, ...otherNfa.endingStates);
+        }
+    }
+
     /**
      * 
      * @param {*} remainingString The string that it hasn't been consumed yet.
