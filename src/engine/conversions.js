@@ -1,6 +1,6 @@
-import { AtomicPattern, Regex, RegexAlternative } from "../grammar/ast";
+import { AtomicPattern, DotPattern, Regex, RegexAlternative } from "../grammar/ast";
 import { ASTERISK, PLUS } from "../grammar/astBuilder";
-import { CharacterMatcher, EPSILON, NFA } from "./dfa";
+import { CharacterMatcher, DotMatcher, EPSILON, NFA } from "./dfa";
 
 let i = 0;
 function newState() {
@@ -52,6 +52,8 @@ export class ConversionBuilder {
             } else if (c.child instanceof Regex) { // Groups
                 baseIsCapturing = true;
                 baseBuilder = (groupNumber) => this.regexToNFA(c.child, false, groupNumber);
+            } else if (c.child instanceof DotPattern) {
+                baseBuilder = () => this._dotPatternNFA();
             }
     
     
@@ -61,14 +63,14 @@ export class ConversionBuilder {
                 const group = baseIsCapturing ? newGroup() : null;
                 base = baseBuilder(group);
                 const extraPart = this._asterisk(() => baseBuilder(group));
-                base.thompsonAppendNFA(extraPart, base.endingStates[0]);
+                base.appendNFA(extraPart, base.endingStates[0]);
             } else {
                 base = baseBuilder(baseIsCapturing ? newGroup() : null);
             }
             if (nfa === null) 
                 nfa = base 
             else 
-                nfa.thompsonAppendNFA(base, nfa.endingStates[0]);
+                nfa.appendNFA(base, nfa.endingStates[0]);
         }
         if (capturingGroupNumber !== null && nfa.allowsCapturingGroups()) nfa.addGroup(nfa.initialState, nfa.endingStates[0], capturingGroupNumber); 
         return nfa;
@@ -80,17 +82,27 @@ export class ConversionBuilder {
         const newEnd = newState();
         base.addState(newInit); base.addState(newEnd);
         base.addTransition(newInit, base.initialState, new CharacterMatcher(EPSILON));
-        // 0 because it can only have a single ending state (with this construction)
-        base.addTransition(base.endingStates[0], newEnd, new CharacterMatcher(EPSILON));
+        // The order is important to the NFA with capturing groups because when its executed it tests the transitions in order
+        // Which means:
+        // - If base.endingStates[0] -> base.initialState goes first, it's greedy 
+        // - If base.endingStates[0] -> newEnd goes first, it's non greedy
         base.addTransition(base.endingStates[0], base.initialState, new CharacterMatcher(EPSILON));
+        base.addTransition(base.endingStates[0], newEnd, new CharacterMatcher(EPSILON));
         base.addTransition(newInit, newEnd, new CharacterMatcher(EPSILON));
         base.setInitialState(newInit);
         base.setEndingStates([newEnd]);
         return base;
     }
 
-    
     _atomicPatternNFA(character) {
+        return this._oneStepNFA(new CharacterMatcher(character));
+    }
+
+    _dotPatternNFA() {
+        return this._oneStepNFA(new DotMatcher());
+    }
+
+    _oneStepNFA(matcher) {
         const nfa = this.nfaFactory();
         let a = newState();
         let b = newState();
@@ -98,7 +110,7 @@ export class ConversionBuilder {
         nfa.setInitialState(a);
         nfa.setEndingStates([b]);
 
-        nfa.addTransition(a,b, new CharacterMatcher(character));
+        nfa.addTransition(a,b, matcher);
         return nfa;
     }
 
@@ -125,14 +137,4 @@ export class ConversionBuilder {
         if (capturingGroupNumber !== null && nfa.allowsCapturingGroups()) nfa.addGroup(start, end, capturingGroupNumber);
         return nfa;
     }
-}
-
-
-
-function NFAToDFA() {
-    //TODO
-}
-
-function minimizeDFA() {
-    //TODO
 }

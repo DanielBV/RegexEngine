@@ -28,5 +28,4 @@ module.exports = {
       new MiniCssExtractPlugin({      filename: "[name].[contenthash].css",    }),
    ],
    resolve: { fallback: { fs: false } },
-   devtool: 'source-map' /* This is left intentionally since it shouldn't matter too much and it allows me to debug directly in github pages :D */
 }

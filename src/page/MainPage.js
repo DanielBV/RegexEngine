@@ -36,9 +36,9 @@ export default class MainPage extends React.Component {
 
             if (this.state.string.trim() !== "") {
                 const match = nfa.compute(this.state.string);
-                const matched =  match.success; 
-                const matches = match.GROUP_MATCHES;
-                const matchesComponent = Object.values(matches).map(([group, init, end]) => <div>Group {group}: {this.state.string.substring(init,end)}</div>);
+                const matched =  match.matched(); 
+                const groups = match.groups();
+                const matchesComponent = Object.keys(groups).map(g => <div>Group {g}: {groups[g]}</div>);
                 resultContent =  <div class="result">
                 <div>Matched: {`${matched}`}</div>
                 <div>Groups: {matchesComponent}</div>

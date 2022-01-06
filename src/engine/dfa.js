@@ -1,3 +1,5 @@
+
+const DEBUG = true;
 export const EPSILON = Symbol("epsilon");
 class Matcher {
     matches(char) {
@@ -21,9 +23,22 @@ export class CharacterMatcher extends Matcher{
 
     get label() {
         return this.c === EPSILON ? "ε" :
+        this.c === "." ? "\\\\." :
         this.c === "\\" ? "\\\\" : this.c;
     }
 }
+
+export class DotMatcher extends Matcher {
+    matches(char) {
+        return char != undefined && char != "" // These two checks are because the compute algorithm of the DPS can call matches with undefined.
+        && char !== EPSILON && char !== "\n"  && char !== "\r";
+    }
+
+    get label() {
+        return ".";
+    }
+}
+
 
 class State{
     constructor(name) {
@@ -128,7 +143,7 @@ export class NFA extends DFA {
      * @param {*} nfa 
      * @param {*} starting 
      */
-    appendNFA(nfa, startingName, matcher) {
+    appendNFA(nfa, startingName, matcher=new CharacterMatcher(EPSILON)) {
         for (const s in nfa.states) {
             this.states[s] = nfa.states[s];
         } 
@@ -191,6 +206,28 @@ export class CapturingNFTState extends NFAState {
     }
 }
 
+class ExecResult {
+    constructor(matched, string, groups) {
+        this._matched = matched;
+        this._groups = {};
+        if (this._matched) this._groups[0] = string;
+        Object.values(groups).forEach(([i, start, end]) => this._groups[i] = string.substring(start,end));
+    }
+
+    matched() {
+        return this._matched;
+    }
+
+    group(i) {
+        return this._groups[i];
+    }
+
+    groups() {
+        return this._groups;
+    }
+    
+}
+
 export class CapturingNFT extends NFA{
     allowsCapturingGroups() {
         return true;
@@ -201,28 +238,21 @@ export class CapturingNFT extends NFA{
     }
 
     compute(string) {
-        return this.recursiveCompute(string, this.states[this.initialState], {ACTIVE_STATES: {}, GROUP_MATCHES:{}, EPSILON_VISITED: []},0);
+        if (DEBUG) console.log("----------------------------------------------------------------------------------------");
+        if (DEBUG) console.log(this);
+        const match = this.recursiveCompute(string, this.states[this.initialState], {ACTIVE_STATES: {}, GROUP_MATCHES:{}, EPSILON_VISITED: []},0);
+        return new ExecResult(match.success, string, match.GROUP_MATCHES);
     }
 
     computeGroups(currentState, memory, i) {
         for (const group of currentState.startsGroups) {
+            if (DEBUG) console.log(`Entered group ${group} in state ${currentState.name}. i=${i}`);
             memory.ACTIVE_STATES[group] = i; // i = starting position of a group 
         }
         for (const group of currentState.endsGroups) {
+            if (DEBUG) console.log(`Exited group ${group} in state ${currentState.name}. i=${i}`);
             memory.GROUP_MATCHES[group] = [group, memory.ACTIVE_STATES[group], i];
         }
-    }
-
-    static calculateEpsilonClosureWithPath(states) {
-        const closure = new Set(states);
-        let closureSizeInPreviousStep = null;
-        while (closureSizeInPreviousStep !== closure.length) {
-            closureSizeInPreviousStep = closure.length;
-            for (const s of closure) {
-                s.compute(EPSILON).forEach(state => closure.add(state));
-            }
-        }
-        return closure;
     }
 
     // TODO fix thompson append to  keep capturing groups
@@ -238,7 +268,6 @@ export class CapturingNFT extends NFA{
     recursiveCompute(remainingString, currentState, memory, i) {
         this.computeGroups(currentState, memory, i);
          //TODO no tengo muy claro si esto dara problemas si justo el último estado acaba un grupo
-        //const epsilonClosure = NFA.calculateEpsilonClosure([currentState]);
         if (remainingString.length === 0 && this.endingStates.includes(currentState.name)) {
             // The closure can't be used here because then it wouldn't compute the groups of the final state. And computing the groups of all epsilon transitions
             // could lead to invalid results
@@ -252,8 +281,10 @@ export class CapturingNFT extends NFA{
             if (matcher.matches(input)) { // Non-epsilon
                 const copyMemory = JSON.parse(JSON.stringify(memory));
                 copyMemory.EPSILON_VISITED = [];
+                if (DEBUG) console.log(`${currentState.name} -> ${toState.name} with input ${input}`);
                 const niceTry = this.recursiveCompute(remainingString.substring(1), toState, copyMemory, i+1);
                 if (niceTry.success) return niceTry;
+                if (DEBUG) console.log(`Backtracked to state ${currentState.name}`);
             } else if (matcher.matches(EPSILON)) {
                     // If you are going to a state that has already been visited in an epsilon transition, you might be in a loop. So don't follow it again
                 if (!memory.EPSILON_VISITED.includes(toState.name)) {
@@ -273,8 +304,10 @@ export class CapturingNFT extends NFA{
                     const copyMemory = JSON.parse(JSON.stringify(memory));
                     copyMemory.EPSILON_VISITED.push(currentState.name);
                     // It's an epsilon transition so the string doesn't change and 'i' isn't updated
+                    if (DEBUG) console.log(`${currentState.name} -> ${toState.name} with input EPSILON`);
                     const niceTry = this.recursiveCompute(remainingString, toState, copyMemory, i); 
                     if (niceTry.success) return niceTry;
+                    if (DEBUG) console.log(`Backtracked to state ${currentState.name}`);
                 } 
             }
         }

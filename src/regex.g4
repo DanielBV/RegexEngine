@@ -15,7 +15,8 @@ expr: subexpr quantifier?;
 subexpr: 
     regexGroup #groupPattern
     | CHAR #atomicPattern
-    | ESCAPED_CHAR #escapedAtomicPattern;
+    | ESCAPED_CHAR #escapedAtomicPattern
+    | DOT #dotPattern;
 
 regexGroup: OPEN_PAR regex CLOSE_PAR;
 
@@ -26,9 +27,11 @@ quantifier:
 WS: [ \n\t\r]+ -> skip;
 
 BACKSLASH : '\\';
-ESCAPED_CHAR: BACKSLASH (BACKSLASH | OPEN_PAR | CLOSE_PAR | ASTERISK | PLUS);
+ESCAPED_CHAR: BACKSLASH (BACKSLASH | OPEN_PAR | CLOSE_PAR | ASTERISK | PLUS | DOT);
 OPEN_PAR: '(';
 CLOSE_PAR: ')';
 ASTERISK: '*';
 PLUS: '+';
+DOT: '.';
+
 CHAR: .;

@@ -28,6 +28,10 @@ export class AtomicPattern {
     }
 }
 
+export class DotPattern {
+    
+}
+
 export class Group {
     constructor() {
         this.subpatterns = [];
