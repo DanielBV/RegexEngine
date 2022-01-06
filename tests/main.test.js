@@ -55,7 +55,10 @@ describe('test basic regex', () => {
     ["a|", "", true],
     ["a(b|)a", "aa", true],
     ["a(|b)a", "aa", true],
-    ["||||||", "", true]
+    ["||||||", "", true],
+    ["a?", "", true],
+    ["ab?a", "aa", true],
+    ["ab?a", "aba", true],
   ];
   for (const algorithm of ALGORITHMS) {
     for (const [regex, string, result] of CASES) {

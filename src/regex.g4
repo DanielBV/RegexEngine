@@ -23,7 +23,8 @@ regexGroup: OPEN_PAR regex CLOSE_PAR;
 
 quantifier:
     ASTERISK #asteriskQuantifier
-    | PLUS #plusQuantifier;
+    | PLUS #plusQuantifier
+    | QUESTION_MARK #questionQuantifier;
 
 WS: [ \n\t\r]+ -> skip;
 
@@ -35,5 +36,6 @@ CLOSE_PAR: ')';
 ASTERISK: '*';
 PLUS: '+';
 DOT: '.';
+QUESTION_MARK: '?';
 
 CHAR: .;

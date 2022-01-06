@@ -1,5 +1,5 @@
 import { AtomicPattern, CharacterClass, DotPattern, Regex, RegexAlternative } from "../grammar/ast";
-import { ASTERISK, PLUS } from "../grammar/astBuilder";
+import { ASTERISK, OPTIONAL, PLUS } from "../grammar/astBuilder";
 import { CharacterMatcher, DotMatcher, EPSILON, NegatedMatcher, NFA, PositiveMatcher } from "./dfa";
 
 let i = 0;
@@ -88,6 +88,9 @@ export class ConversionBuilder {
                 base = baseBuilder(group);
                 const extraPart = this._asterisk(() => baseBuilder(group));
                 base.thompsonAppendNFA(extraPart, base.endingStates[0]);
+            } else if (c.quantifier === OPTIONAL) {
+                base = baseBuilder(baseIsCapturing ? newGroup() : null);
+                base.addTransition(base.initialState, base.endingStates[0], new CharacterMatcher(EPSILON));
             } else {
                 base = baseBuilder(baseIsCapturing ? newGroup() : null);
             }

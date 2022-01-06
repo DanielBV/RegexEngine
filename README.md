@@ -3,7 +3,8 @@
 ## Supported syntax
 * Star `*`: `a*`
 * Plus `+`: `a+`
-* Capturing groups: (ab)+
+* Optional `?`: `ab?a`
+* Capturing groups: `(ab)+`
 * Character classes:
     * `.`: Matches any single character (except linebreaks).
     * `\d`: Matches a single digit.
@@ -12,3 +13,14 @@
     * `\W`: Matches [^A-Za-z0-9_] 
     * `\s`: Matches whitespace charactrers
     * `\S`: Matches non-whitespace characters
+
+## Pending features
+- Character class ([])
+- Negated character class ([^])
+- Non capturing group
+- Named capturing group:
+* Non-greedy quantifiers
+- ¿Non-greedy interface? - Spoiler: This might not happen at all.
+    - MatchFirst
+    - MatchAll
+    - Anchors (^ and &)

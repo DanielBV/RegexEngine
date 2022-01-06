@@ -5,6 +5,7 @@ import { EPSILON } from '../engine/dfa';
 
 export const ASTERISK = Symbol("*");
 export const PLUS = Symbol("+");
+export const OPTIONAL = Symbol("?");
 
 export class AstBuilder extends RegexVisitor {
 
@@ -54,6 +55,10 @@ export class AstBuilder extends RegexVisitor {
 
     visitAsteriskQuantifier() {
         return ASTERISK;
+    }
+
+    visitQuestionQuantifier() {
+        return OPTIONAL;
     }
     
     visitGroupPattern(ctx) {
