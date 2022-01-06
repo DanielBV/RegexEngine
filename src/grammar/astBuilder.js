@@ -1,5 +1,5 @@
 import RegexVisitor from './generated/regexVisitor';
-import {Regex, Expression, AtomicPattern, RegexAlternative, DotPattern} from './ast';
+import {Regex, Expression, AtomicPattern, RegexAlternative, DotPattern, CharacterClass} from './ast';
 import { EPSILON } from '../engine/dfa';
 
 
@@ -40,8 +40,12 @@ export class AstBuilder extends RegexVisitor {
         return new AtomicPattern(ctx.getText());
     }
 
-    visitEscapedAtomicPattern(ctx) {
+    visitEscapedReservedAtomicPattern(ctx) {
         return new AtomicPattern(ctx.getText().substring(1));
+    }
+
+    visitCharacterClass(ctx) {
+        return new CharacterClass(ctx.getText());
     }
 
     visitDotPattern() {

@@ -29,7 +29,12 @@ export class AtomicPattern {
 }
 
 export class DotPattern {
-    
+}
+
+export class CharacterClass {
+    constructor(clazz) {
+        this.class = clazz;
+    }
 }
 
 export class Group {

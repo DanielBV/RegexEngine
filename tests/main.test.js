@@ -73,6 +73,7 @@ describe('Regex escaped characters', () => {
     ["\\(\\)", "()", true],
     ["\\.", ".", true],
     ["\\.", "a", false],
+    ["\\\\d", "\\d", true],
   ];
   for (const algorithm of ALGORITHMS) {
     for (const [regex, string, result] of CASES) {
@@ -94,6 +95,53 @@ describe('Dot Matcher', () => {
     }
   }  
 });
+
+describe('Regex character classes', () => {
+  const CASES = [
+    ["\\d+", "0123456789", true],
+    ["\\d+", "/", false],
+    ["\\d+", ":", false],
+    ["\\D+", "a@^ª'¡€", true],
+    ["\\D+", "a\n", false],
+    ["\\D+", "1", false],
+    ["\\D+", "9", false],
+    ["\\w+", "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_", true],
+    ["\\w+", ":", false],
+    ["\\w+", "@", false],
+    ["\\w+", ".", false],
+    ["\\w+", "{", false],
+    ["\\w+", "[", false],
+    ["\\w+", "/", false],
+    ["\\W+", ":", true],
+    ["\\W+", "@", true],
+    ["\\W+", ".", true],
+    ["\\W+", "{", true],
+    ["\\W+", "[", true],
+    ["\\W+", "/", true],
+    ["\\W+", ":\n", false],
+    ["\\W+", "a", false],
+    ["\\W+", "z", false],
+    ["\\W+", "A", false],
+    ["\\W+", "Z", false],
+    ["\\W+", "0", false],
+    ["\\W+", "9", false],
+    ["\\W+", "_", false],
+  ];
+  const whitespaces = [" ", "\f", "\n", "\r", "\t", "\v", "\u00a0", "\u1680", "\u2028","\u2029","\u202f", "\u205f", 
+    "\u3000", "\ufeff", "\u2000", "\u2001", "\u2002","\u2003", "\u2004", "\u2005", "\u2006", "\u2007", "\u2008", 
+    "\u2009"];
+  const WHITESPACE_CASES = [];
+  whitespaces.forEach(x => WHITESPACE_CASES.push(["\\s", x, true]));
+  whitespaces.forEach(x => WHITESPACE_CASES.push(["\\S", x, false]));
+  CASES.push(...WHITESPACE_CASES);
+
+  for (const algorithm of ALGORITHMS) {
+    for (const [regex, string, result] of CASES) {
+      testCase(algorithm, regex, string, result);
+    }
+  }  
+});
+
 
 describe('Test capture groups', () => {
   const CASES = [

@@ -1,6 +1,6 @@
-import { AtomicPattern, DotPattern, Regex, RegexAlternative } from "../grammar/ast";
+import { AtomicPattern, CharacterClass, DotPattern, Regex, RegexAlternative } from "../grammar/ast";
 import { ASTERISK, PLUS } from "../grammar/astBuilder";
-import { CharacterMatcher, DotMatcher, EPSILON, NFA } from "./dfa";
+import { CharacterMatcher, DotMatcher, EPSILON, NegatedMatcher, NFA, PositiveMatcher } from "./dfa";
 
 let i = 0;
 function newState() {
@@ -22,6 +22,28 @@ function resetGroupNumbers() {
 
 function resetStateNumbers() {
     i = 0;
+}
+
+const wordLambda = (char) => (char >= "a" && char <= "z") || (char >= "A" && char <= "Z") ||  (char >= "0" && char <= "9") || char === "_";
+const SINGLE_SPACE = [" ", "\f", "\n", "\r", "\t", "\v", "\u00a0", "\u1680", "\u2028","\u2029","\u202f", "\u205f", "\u3000", "\ufeff"];
+const spaceLambda = (char) => SINGLE_SPACE.includes(char) || (char >= "\u2000" && char <= "\u200a");
+const CLASS_CHARACTERS = {
+    "\\d": {lambda: (char) => char >= "0" && char <= "9", positive: true}, 
+    "\\D": {positive: false, lambda: (char) =>  char < "0" || char > "9"},
+    "\\w": {lambda: wordLambda , positive: true}, 
+    "\\W": {lambda: (char) => !wordLambda(char) , positive: false}, 
+    "\\s": {lambda: spaceLambda, positive: true},
+    "\\S": {lambda: (char) => !spaceLambda(char), positive: false},
+};
+function getClassMatcher(clazz) {
+    const matcher = CLASS_CHARACTERS[clazz];
+    //TODO this could be simplified just by making the negative match as literally the negation of the positive one. But I should be carefull with "weird"
+    //cases like new line, epsilon, undefined, empty string, etc
+    if (matcher.positive)
+        // The "\\+" is because when the label is translated to dot it isn't escaped.... I guess it would be easier to just escape it there. TODO
+        return new PositiveMatcher(matcher.lambda, "\\"+clazz);
+    else 
+        return new NegatedMatcher(matcher.lambda, "\\"+clazz);
 }
 
 export class ConversionBuilder {
@@ -54,6 +76,8 @@ export class ConversionBuilder {
                 baseBuilder = (groupNumber) => this.regexToNFA(c.child, false, groupNumber);
             } else if (c.child instanceof DotPattern) {
                 baseBuilder = () => this._dotPatternNFA();
+            } else if (c.child instanceof CharacterClass) {
+                baseBuilder = () => this._characterClassNFA(c.child.class);
             }
     
     
@@ -100,6 +124,10 @@ export class ConversionBuilder {
 
     _dotPatternNFA() {
         return this._oneStepNFA(new DotMatcher());
+    }
+
+    _characterClassNFA(clazz) {
+        return this._oneStepNFA(getClassMatcher(clazz));
     }
 
     _oneStepNFA(matcher) {

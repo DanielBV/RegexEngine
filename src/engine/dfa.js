@@ -28,6 +28,7 @@ export class CharacterMatcher extends Matcher{
     }
 }
 
+
 export class DotMatcher extends Matcher {
     matches(char) {
         return char != undefined && char != "" // These two checks are because the compute algorithm of the DPS can call matches with undefined.
@@ -39,6 +40,44 @@ export class DotMatcher extends Matcher {
     }
 }
 
+/*
+    A matcher for classes that match with "everything except X"
+*/
+export class NegatedMatcher extends Matcher {
+    constructor(baseLambda, name) {
+        super();
+        this.baseMatcher= baseLambda;
+        this.name = name;
+    }
+
+    matches(char) {
+        return char != undefined && char != "" // These two checks are because the compute algorithm of the DPS can call matches with undefined.
+        && char !== "\n"  && char !== "\r"
+        && char !== EPSILON && this.baseMatcher(char);
+    }
+
+    get label() {
+        return this.name;
+    }
+}
+
+export class PositiveMatcher extends Matcher {
+    constructor(baseLambda, name) {
+        super();
+        this.baseMatcher= baseLambda;
+        this.name = name;
+    }
+
+    matches(char) {
+        // The char !== EPSILON is to avoid the check bacause EPSILON is a symbol and not a string. 
+        // So if baseMatcher is  (char) => char >= "0" && char <= "9" it would throw an error.
+        return char !== EPSILON && this.baseMatcher(char);
+    }
+
+    get label() {
+        return this.name;
+    }
+}
 
 class State{
     constructor(name) {
