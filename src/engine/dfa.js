@@ -1,5 +1,5 @@
 
-const DEBUG = true;
+const DEBUG = false;
 export const EPSILON = Symbol("epsilon");
 class Matcher {
     matches(char) {
