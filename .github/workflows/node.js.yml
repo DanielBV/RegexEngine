@@ -16,11 +16,13 @@ jobs:
       run:  | 
         wget https://www.antlr.org/download/antlr-4.9.2-complete.jar
     - name: Compile grammar
-      run: java -jar antlr-4.9.2-complete.jar ./src/regex.g4 -o src/grammar/generated -Dlanguage=JavaScript -visitor -no-listener
+      run: java -jar antlr-4.9.2-complete.jar ./src/regex.g4 -o ./src/grammar/generated -Dlanguage=JavaScript -visitor -no-listener
     - name: Test
       run: ls src/grammar/generated
     - name: Test2
       run: ls src/grammar/
+    - name: Test3
+      run: ls src/grammar/generated/src
     - run: npm test
     - run: npm run build
     - name: Commit and push
