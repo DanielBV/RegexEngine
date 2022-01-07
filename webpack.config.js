@@ -1,4 +1,5 @@
 const path = require("path");
+const webpack = require('webpack');
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 module.exports = {
    entry: path.join(__dirname, "/src/index.js"),
@@ -20,7 +21,10 @@ module.exports = {
    plugins:[
     new HtmlWebpackPlugin({
         template: './src/index.html'
-      })
+      }),
+      new webpack.DefinePlugin({
+        'process.env.VERSION': JSON.stringify(require("./package.json").version)
+    })
    ],
    resolve: { fallback: { fs: false } },
    devtool: 'source-map'

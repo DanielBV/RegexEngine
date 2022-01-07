@@ -16,7 +16,6 @@
     * `[a-zA-Z]`: Matches all characters between a-z and A-Z
 
 ## Pending features
-- Character class ([])
 - Negated character class ([^])
 - Non capturing group
 - Named capturing group:

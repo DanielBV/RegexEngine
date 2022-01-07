@@ -113,3 +113,9 @@ body, #page, #root{
 .resultSection{
     overflow: hidden;
 }
+
+.versionLabel{
+    display: inline;
+    color: #6c757d;
+    font-size: 14px;
+}

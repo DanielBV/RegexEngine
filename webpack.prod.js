@@ -1,6 +1,7 @@
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const webpack = require('webpack');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 module.exports = {
     mode: 'production',
@@ -26,6 +27,9 @@ module.exports = {
       }),
       new CleanWebpackPlugin(),
       new MiniCssExtractPlugin({      filename: "[name].[contenthash].css",    }),
+      new webpack.DefinePlugin({
+        'process.env.VERSION': JSON.stringify(require("./package.json").version)
+    })
    ],
    resolve: { fallback: { fs: false } },
 }
