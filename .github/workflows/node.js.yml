@@ -1,7 +1,7 @@
 name: Deploy to GitHub pages
 on:
   push:
-    branches: [ main ]
+    branches: [ main, actions ]
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -12,12 +12,10 @@ jobs:
       with:
         node-version: '16'
     - run: npm ci
-    - run: shopt -s expand_aliases
     - name: Install antlr4
       run:  | 
-        shopt -s expand_aliases
         wget https://www.antlr.org/download/antlr-4.9.2-complete.jar
-        java -jar antlr-4.9.2-complete.jar ./src/regex.g4 -o src/grammar/generated -Dlanguage=JavaScript -visitor -no-listener"
+        java -jar antlr-4.9.2-complete.jar ./src/regex.g4 -o src/grammar/generated -Dlanguage=JavaScript -visitor -no-listener
         npm run grammar
     - run: npm test
     - run: npm run build
