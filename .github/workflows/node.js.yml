@@ -15,7 +15,10 @@ jobs:
     - name: Install antlr4
       run:  | 
         wget https://www.antlr.org/download/antlr-4.9.2-complete.jar
-        java -jar antlr-4.9.2-complete.jar ./src/regex.g4 -o src/grammar/generated -Dlanguage=JavaScript -visitor -no-listener
+    - name: Compile grammar
+      run: java -jar antlr-4.9.2-complete.jar ./src/regex.g4 -o src/grammar/generated -Dlanguage=JavaScript -visitor -no-listener
+    - name: Test
+      run: ls src/grammar/generated
     - run: npm test
     - run: npm run build
     - name: Commit and push
