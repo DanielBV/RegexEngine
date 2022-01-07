@@ -13,6 +13,7 @@
     * `\W`: Matches [^A-Za-z0-9_] 
     * `\s`: Matches whitespace charactrers
     * `\S`: Matches non-whitespace characters
+    * `[a-zA-Z]`: Matches all characters between a-z and A-Z
 
 ## Pending features
 - Character class ([])

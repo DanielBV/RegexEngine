@@ -14,22 +14,31 @@ expr: subexpr quantifier?;
 */
 subexpr: 
     regexGroup #groupPattern
-    | CHAR #atomicPattern
+    | atomicChar #atomicPattern
     | ESCAPED_RESERVED_CHAR #escapedReservedAtomicPattern
     | CHARACTER_CLASS #characterClass
+    | complexCharacterClass #complexClass
     | DOT #dotPattern;
 
 regexGroup: OPEN_PAR regex CLOSE_PAR;
+complexCharacterClass: OPEN_BRACKET complexCCPiece* CLOSE_BRACKET;
+
+complexCCPiece: allowedCharInCharacterClass (DASH allowedCharInCharacterClass)?;
+
+allowedCharInCharacterClass:
+    CHAR | DASH | OPEN_BRACKET | OPEN_PAR | CLOSE_PAR | ASTERISK | PLUS | DOT | QUESTION_MARK | ESCAPED_RESERVED_CHAR;
+
+atomicChar: 
+    CHAR | CLOSE_BRACKET | DASH;
 
 quantifier:
     ASTERISK #asteriskQuantifier
     | PLUS #plusQuantifier
     | QUESTION_MARK #questionQuantifier;
 
-WS: [ \n\t\r]+ -> skip;
 
 BACKSLASH : '\\';
-ESCAPED_RESERVED_CHAR: BACKSLASH (BACKSLASH | OPEN_PAR | CLOSE_PAR | ASTERISK | PLUS | DOT);
+ESCAPED_RESERVED_CHAR: BACKSLASH (BACKSLASH | OPEN_PAR | CLOSE_PAR | ASTERISK | PLUS | DOT | OPEN_BRACKET | CLOSE_BRACKET);
 CHARACTER_CLASS: BACKSLASH ( 'd' | 'D' | 'w' | 'W' | 's' | 'S');
 OPEN_PAR: '(';
 CLOSE_PAR: ')';
@@ -37,5 +46,8 @@ ASTERISK: '*';
 PLUS: '+';
 DOT: '.';
 QUESTION_MARK: '?';
+OPEN_BRACKET: '[';
+CLOSE_BRACKET: ']';
+DASH: '-';
 
 CHAR: .;

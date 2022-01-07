@@ -1,5 +1,5 @@
 import RegexVisitor from './generated/regexVisitor';
-import {Regex, Expression, AtomicPattern, RegexAlternative, DotPattern, CharacterClass} from './ast';
+import {Regex, Expression, AtomicPattern, RegexAlternative, DotPattern, CharacterClass, ComplexClass} from './ast';
 import { EPSILON } from '../engine/dfa';
 
 
@@ -51,6 +51,30 @@ export class AstBuilder extends RegexVisitor {
 
     visitDotPattern() {
         return new DotPattern();
+    }
+    
+    visitComplexCharacterClass(ctx) {
+        const children = this.visit(ctx.complexCCPiece());
+        const single = [];
+        const ranges = [];
+        for (const c of children) {
+            if (c.length === 1) single.push(c[0]);
+            else ranges.push(c);
+        }
+        return new ComplexClass(single, ranges, ctx.getText());
+    }
+    
+    visitComplexClass(ctx) {
+       return this.visit(ctx.complexCharacterClass());
+    }
+
+    visitComplexCCPiece(ctx) {
+        return this.visit(ctx.allowedCharInCharacterClass());
+    }
+
+    visitAllowedCharInCharacterClass(ctx) {
+        const txt = ctx.getText();
+        return txt[0] === "\\" ? txt.substring(1) : txt;
     }
 
     visitAsteriskQuantifier() {

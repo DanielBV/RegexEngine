@@ -42,3 +42,15 @@ export class Group {
         this.subpatterns = [];
     }
 }
+
+export class ComplexClass {
+    constructor(individialChars, ranges, name) {
+        this.chars = individialChars;
+        this.ranges = ranges;
+        this.name = name;
+    }
+
+    matches(c) {
+        return this.chars.includes(c) || this.ranges.some(([start, end]) => c >= start && end >= c);
+    }
+}

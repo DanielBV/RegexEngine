@@ -23,6 +23,7 @@ export class CharacterMatcher extends Matcher{
 
     get label() {
         return this.c === EPSILON ? "ε" :
+        this.c === " " ? "space" :
         this.c === "." ? "\\\\." :
         this.c === "\\" ? "\\\\" : this.c;
     }

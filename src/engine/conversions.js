@@ -1,4 +1,4 @@
-import { AtomicPattern, CharacterClass, DotPattern, Regex, RegexAlternative } from "../grammar/ast";
+import { AtomicPattern, CharacterClass, ComplexClass, DotPattern, Regex, RegexAlternative } from "../grammar/ast";
 import { ASTERISK, OPTIONAL, PLUS } from "../grammar/astBuilder";
 import { CharacterMatcher, DotMatcher, EPSILON, NegatedMatcher, NFA, PositiveMatcher } from "./dfa";
 
@@ -78,6 +78,8 @@ export class ConversionBuilder {
                 baseBuilder = () => this._dotPatternNFA();
             } else if (c.child instanceof CharacterClass) {
                 baseBuilder = () => this._characterClassNFA(c.child.class);
+            } else if (c.child instanceof ComplexClass) {
+                baseBuilder = () => this._complexCharacterClassNFA(c.child);
             }
     
     
@@ -131,6 +133,11 @@ export class ConversionBuilder {
 
     _characterClassNFA(clazz) {
         return this._oneStepNFA(getClassMatcher(clazz));
+    }
+
+    _complexCharacterClassNFA(ccc) {
+        const matcherLambda = (char) => ccc.matches(char);
+        return this._oneStepNFA(new PositiveMatcher(matcherLambda, ccc.name));
     }
 
     _oneStepNFA(matcher) {

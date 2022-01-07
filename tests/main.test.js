@@ -1,5 +1,5 @@
 
-import { ConversionBuilder, regexToNFA } from '../src/engine/conversions';
+import { ConversionBuilder } from '../src/engine/conversions';
 import { CapturingNFT, NFA } from '../src/engine/dfa';
 import parseRegex from '../src/grammar/parser';
 
@@ -59,6 +59,26 @@ describe('test basic regex', () => {
     ["a?", "", true],
     ["ab?a", "aa", true],
     ["ab?a", "aba", true],
+    ["-", "-", true],
+    ["[-]", "-", true],
+    ["[--]", "-", true],
+    ["[---]", "-", true],
+    ["]", "]", true],
+    ["[[]", "[", true],
+    ["[]]", "]", false],
+    ["[()]+", ")(", true],
+    ["[\\\\]", "\\", true],
+    ["[.?+*]+", "?+*.", true],
+    ["[\\(]+", "(", true],
+    ["[\\(]+", "\\", false],
+    ["[0-9]+", "0123456789", true],
+    ["[0-9]+", "/", false],
+    ["[0-9]+", ":", false],
+    ["[0-9a-zA-Zñ]+", "ñazAZ", true],
+    ["[9-0]+", "0", false],
+    ["[]+", "0", false],
+    ["a b", "a b", true],
+    ["a b", "ab", false],
   ];
   for (const algorithm of ALGORITHMS) {
     for (const [regex, string, result] of CASES) {
@@ -77,6 +97,10 @@ describe('Regex escaped characters', () => {
     ["\\.", ".", true],
     ["\\.", "a", false],
     ["\\\\d", "\\d", true],
+    ["[\\]]", "]", true],
+    ["[\\[]", "[", true],
+    ["\\[", "[", true],
+    ["\\]", "]", true],
   ];
   for (const algorithm of ALGORITHMS) {
     for (const [regex, string, result] of CASES) {
