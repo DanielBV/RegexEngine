@@ -13,8 +13,9 @@ jobs:
         node-version: '16'
     - run: npm ci
     - name: Install antlr4
-      - run:  wget https://www.antlr.org/download/antlr-4.9.2-complete.jar
-      - run: alias antlr4='java -jar antlr-4.9.2-complete.jar'
+      run:  | 
+        wget https://www.antlr.org/download/antlr-4.9.2-complete.jar
+        alias antlr4='java -jar antlr-4.9.2-complete.jar'
     - run: npm run grammar
     - run: npm test
     - run: npm run build
