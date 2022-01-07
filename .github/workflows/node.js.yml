@@ -15,6 +15,7 @@ jobs:
     - name: Install antlr4
       run:  | 
         wget https://www.antlr.org/download/antlr-4.9.2-complete.jar
+        shopt -s expand_aliases
         alias antlr4='java -jar antlr-4.9.2-complete.jar'
     - run: npm run grammar
     - run: npm test
