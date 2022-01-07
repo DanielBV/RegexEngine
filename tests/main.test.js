@@ -79,6 +79,21 @@ describe('test basic regex', () => {
     ["[]+", "0", false],
     ["a b", "a b", true],
     ["a b", "ab", false],
+    ["<", "<", true],
+    [">", ">", true],
+    ["[<]", "<", true],
+    ["[>]", ">", true],
+    [":", ":", true],
+    ["[:]", ":", true],
+    ["[\\^]", "^", true],
+    ["[a^]", "^", true],
+    ["[^a]+", "a", false],
+    ["[^a]+", "b", true],
+    ["[^a-z]+", "a", false],
+    ["[^a-z]+", "z", false],
+    ["[^a-z]+", "`{", true],
+    ["[^a-zA-Z]+", "W", false],
+    ["[^a-zA-Zñ]+", "ñ", false],
   ];
   for (const algorithm of ALGORITHMS) {
     for (const [regex, string, result] of CASES) {
@@ -101,6 +116,10 @@ describe('Regex escaped characters', () => {
     ["[\\[]", "[", true],
     ["\\[", "[", true],
     ["\\]", "]", true],
+    ["\\>", ">", true],
+    ["\\<", "<", true],
+    ["\\:", ":", true],
+    ["\\^", "^", true],
   ];
   for (const algorithm of ALGORITHMS) {
     for (const [regex, string, result] of CASES) {
@@ -181,6 +200,11 @@ describe('Test capture groups', () => {
     ["(.+?)(.+?)(.+)", "abcc",  [{group:0, txt: "abcc"},{group: 1, txt: "a"}, {group:2, txt: "b"}, {group:3, txt: "cc"}]],
     ["a(b??)(b+)", "abb",  [{group:0, txt: "abb"},{group: 1, txt: ""}, {group:2, txt: "bb"}]],
     //TODO When the algorithm is no longer a "match the whole string" instead of a ^regex$, then (a*?)(a*?) should have no matches
+    //Named groups:
+    ["(?<name>a+)", "aaaa", [{group:0, txt: "aaaa"},{group: "name", txt: "aaaa"}]],
+    ["(?<name>a+)(?<name>b+)", "aabb", [{group:0, txt: "aabb"},{group: "name", txt: "bb"}]],
+    //Non capturing group
+    ["((?:ab)+)", "abab", [{group:0, txt: "abab"},{group: 1, txt: "abab"}]],
   ]
 
     for (const [regex, string, result] of CASES) {
@@ -190,6 +214,7 @@ describe('Test capture groups', () => {
       const match = nfa.compute(string);
       for (const group of result) {
         expect(match.group(group.group)).toBe(group.txt);
+        expect(Object.keys(match.groups()).length).toBe(result.length)
       }
     }
 });

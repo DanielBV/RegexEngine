@@ -65,14 +65,16 @@ export class ConversionBuilder {
             resetGroupNumbers();
         }
         for (const c of regexAST.subpatterns) {
-            let baseBuilder, base, baseIsCapturing;
+            let baseBuilder, base, baseIsCapturing, namedGroup = null;
             if (c.child instanceof AtomicPattern) {
                 baseBuilder = () => this._atomicPatternNFA(c.child.char);
             } else if (c.child instanceof RegexAlternative) {  // Groups
-                baseIsCapturing = true;
+                baseIsCapturing = c.child.isCapturingGroup();
+                namedGroup = c.child.groupName;
                 baseBuilder = (groupNumber) => this._alternativeToNFA(c.child, false, groupNumber);
             } else if (c.child instanceof Regex) { // Groups
-                baseIsCapturing = true;
+                baseIsCapturing = c.child.isCapturingGroup();
+                namedGroup = c.child.groupName;
                 baseBuilder = (groupNumber) => this.regexToNFA(c.child, false, groupNumber);
             } else if (c.child instanceof DotPattern) {
                 baseBuilder = () => this._dotPatternNFA();
@@ -82,22 +84,24 @@ export class ConversionBuilder {
                 baseBuilder = () => this._complexCharacterClassNFA(c.child);
             }
     
+            // Lazy to avoid creating unnecessary groups.
+            const groupBuilder = () => namedGroup ? namedGroup : newGroup();
     
             if (c.quantifier === ASTERISK || c.quantifier === LAZY_ASTERISK) {
-                base = this._asterisk(() => baseBuilder(baseIsCapturing ? newGroup() : null), c.quantifier === LAZY_ASTERISK);
+                base = this._asterisk(() => baseBuilder(baseIsCapturing ? groupBuilder() : null), c.quantifier === LAZY_ASTERISK);
             } else if (c.quantifier === PLUS || c.quantifier === LAZY_PLUS) {
-                const group = baseIsCapturing ? newGroup() : null;
+                const group = baseIsCapturing ? groupBuilder() : null;
                 base = baseBuilder(group);
                 const extraPart = this._asterisk(() => baseBuilder(group), c.quantifier === LAZY_PLUS);
                 base.thompsonAppendNFA(extraPart, base.endingStates[0]);
             } else if (c.quantifier === OPTIONAL || c.quantifier === LAZY_OPTIONAL) {
-                base = baseBuilder(baseIsCapturing ? newGroup() : null);
+                base = baseBuilder(baseIsCapturing ? groupBuilder() : null);
                 if (c.quantifier === LAZY_OPTIONAL)
                     base.unshiftTransition(base.initialState, base.endingStates[0], new CharacterMatcher(EPSILON));
                 else 
                     base.addTransition(base.initialState, base.endingStates[0], new CharacterMatcher(EPSILON));
             } else {
-                base = baseBuilder(baseIsCapturing ? newGroup() : null);
+                base = baseBuilder(baseIsCapturing ? groupBuilder() : null);
             }
             if (nfa === null) 
                 nfa = base 
@@ -148,7 +152,10 @@ export class ConversionBuilder {
 
     _complexCharacterClassNFA(ccc) {
         const matcherLambda = (char) => ccc.matches(char);
-        return this._oneStepNFA(new PositiveMatcher(matcherLambda, ccc.name));
+        if (ccc.negated) 
+            return this._oneStepNFA(new NegatedMatcher((char) => !matcherLambda(char), ccc.name));
+        else 
+            return this._oneStepNFA(new PositiveMatcher(matcherLambda, ccc.name));
     }
 
     _oneStepNFA(matcher) {
