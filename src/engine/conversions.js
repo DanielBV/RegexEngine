@@ -1,5 +1,5 @@
 import { AtomicPattern, CharacterClass, ComplexClass, DotPattern, Regex, RegexAlternative } from "../grammar/ast";
-import { ASTERISK, OPTIONAL, PLUS } from "../grammar/astBuilder";
+import { ASTERISK, LAZY_ASTERISK, OPTIONAL, PLUS, LAZY_PLUS, LAZY_OPTIONAL } from "../grammar/astBuilder";
 import { CharacterMatcher, DotMatcher, EPSILON, NegatedMatcher, NFA, PositiveMatcher } from "./dfa";
 
 let i = 0;
@@ -83,16 +83,19 @@ export class ConversionBuilder {
             }
     
     
-            if (c.quantifier === ASTERISK) {
-                base = this._asterisk(() => baseBuilder(baseIsCapturing ? newGroup() : null));
-            } else if (c.quantifier === PLUS) {
+            if (c.quantifier === ASTERISK || c.quantifier === LAZY_ASTERISK) {
+                base = this._asterisk(() => baseBuilder(baseIsCapturing ? newGroup() : null), c.quantifier === LAZY_ASTERISK);
+            } else if (c.quantifier === PLUS || c.quantifier === LAZY_PLUS) {
                 const group = baseIsCapturing ? newGroup() : null;
                 base = baseBuilder(group);
-                const extraPart = this._asterisk(() => baseBuilder(group));
+                const extraPart = this._asterisk(() => baseBuilder(group), c.quantifier === LAZY_PLUS);
                 base.thompsonAppendNFA(extraPart, base.endingStates[0]);
-            } else if (c.quantifier === OPTIONAL) {
+            } else if (c.quantifier === OPTIONAL || c.quantifier === LAZY_OPTIONAL) {
                 base = baseBuilder(baseIsCapturing ? newGroup() : null);
-                base.addTransition(base.initialState, base.endingStates[0], new CharacterMatcher(EPSILON));
+                if (c.quantifier === LAZY_OPTIONAL)
+                    base.unshiftTransition(base.initialState, base.endingStates[0], new CharacterMatcher(EPSILON));
+                else 
+                    base.addTransition(base.initialState, base.endingStates[0], new CharacterMatcher(EPSILON));
             } else {
                 base = baseBuilder(baseIsCapturing ? newGroup() : null);
             }
@@ -105,19 +108,27 @@ export class ConversionBuilder {
         return nfa;
     }
 
-    _asterisk(builder) {
+    _asterisk(builder, lazy) {
         const newInit = newState();
         const base = builder();
         const newEnd = newState();
         base.addState(newInit); base.addState(newEnd);
-        base.addTransition(newInit, base.initialState, new CharacterMatcher(EPSILON));
         // The order is important to the NFA with capturing groups because when its executed it tests the transitions in order
         // Which means:
         // - If base.endingStates[0] -> base.initialState goes first, it's greedy 
         // - If base.endingStates[0] -> newEnd goes first, it's non greedy
-        base.addTransition(base.endingStates[0], base.initialState, new CharacterMatcher(EPSILON));
-        base.addTransition(base.endingStates[0], newEnd, new CharacterMatcher(EPSILON));
-        base.addTransition(newInit, newEnd, new CharacterMatcher(EPSILON));
+        if (lazy) {
+            base.addTransition(newInit, newEnd, new CharacterMatcher(EPSILON));
+            base.addTransition(newInit, base.initialState, new CharacterMatcher(EPSILON));
+            base.addTransition(base.endingStates[0], newEnd, new CharacterMatcher(EPSILON));
+            base.addTransition(base.endingStates[0], base.initialState, new CharacterMatcher(EPSILON));
+        } else {
+            base.addTransition(newInit, base.initialState, new CharacterMatcher(EPSILON));
+            base.addTransition(base.endingStates[0], base.initialState, new CharacterMatcher(EPSILON));
+            base.addTransition(base.endingStates[0], newEnd, new CharacterMatcher(EPSILON));
+            base.addTransition(newInit, newEnd, new CharacterMatcher(EPSILON));
+        }
+      
         base.setInitialState(newInit);
         base.setEndingStates([newEnd]);
         return base;

@@ -90,6 +90,10 @@ class State{
         this.transitions.push([matcher, toState]);
     }
 
+    unshiftTransition(toState, matcher) {
+        this.transitions.unshift([matcher, toState]);
+    }
+
     compute(c) {
         for (const [matcher, toState] of this.transitions) {
             if (matcher.matches(c)) return toState;
@@ -134,6 +138,13 @@ class DFA {
 
     addTransition(fromState, toState, matcher) {
         this.states[fromState].addTransition(this.states[toState], matcher);
+    }
+
+    /**
+     * Like 'addTransition' but the transition is given the highest priority
+     */
+    unshiftTransition(fromState, toState, matcher) {
+        this.states[fromState].unshiftTransition(this.states[toState], matcher);
     }
 
     compute(string) {

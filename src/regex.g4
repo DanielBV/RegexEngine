@@ -34,7 +34,10 @@ atomicChar:
 quantifier:
     ASTERISK #asteriskQuantifier
     | PLUS #plusQuantifier
-    | QUESTION_MARK #questionQuantifier;
+    | QUESTION_MARK #questionQuantifier
+    | ASTERISK QUESTION_MARK #lazyAsteriskQuantifier
+    | PLUS QUESTION_MARK #lazyPlusQuantifier
+    | QUESTION_MARK QUESTION_MARK #lazyQuestionQuantifier;
 
 
 BACKSLASH : '\\';
