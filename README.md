@@ -4,6 +4,7 @@
 * Star `*`: `a*`
 * Plus `+`: `a+`
 * Optional `?`: `ab?a`
+* Lazy quantifiers: `*?`, `+?`, `??`
 * Capturing groups: `(ab)+`
 * Character classes:
     * `.`: Matches any single character (except linebreaks).

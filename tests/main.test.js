@@ -174,7 +174,13 @@ describe('Test capture groups', () => {
   const CASES = [
     ["(aa)(bb)", "aabb", [{group:0, txt: "aabb"},{group: 1, txt: "aa"}, {group:2, txt: "bb"}]],
     ["(.+)(.+)", "aaaaab", [{group:0, txt: "aaaaab"},{group: 1, txt: "aaaaa"}, {group:2, txt: "b"}]],
-    ["(a|b)+(a|b)", "aaaab",  [{group:0, txt: "aaaab"},{group: 1, txt: "a"}, {group:2, txt: "b"}]]
+    ["(a|b)+(a|b)", "aaaab",  [{group:0, txt: "aaaab"},{group: 1, txt: "a"}, {group:2, txt: "b"}]],
+    //Lazy capture groups:
+    ["(a*?)(a*)", "aaaa", [{group:0, txt: "aaaa"},{group: 1, txt: ""}, {group:2, txt: "aaaa"}]],
+    ["(.+?)(.+)", "abbb",  [{group:0, txt: "abbb"},{group: 1, txt: "a"}, {group:2, txt: "bbb"}]],
+    ["(.+?)(.+?)(.+)", "abcc",  [{group:0, txt: "abcc"},{group: 1, txt: "a"}, {group:2, txt: "b"}, {group:3, txt: "cc"}]],
+    ["a(b??)(b+)", "abb",  [{group:0, txt: "abb"},{group: 1, txt: ""}, {group:2, txt: "bb"}]],
+    //TODO When the algorithm is no longer a "match the whole string" instead of a ^regex$, then (a*?)(a*?) should have no matches
   ]
 
     for (const [regex, string, result] of CASES) {

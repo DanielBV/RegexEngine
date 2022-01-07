@@ -6,6 +6,9 @@ import { EPSILON } from '../engine/dfa';
 export const ASTERISK = Symbol("*");
 export const PLUS = Symbol("+");
 export const OPTIONAL = Symbol("?");
+export const LAZY_ASTERISK = Symbol("*?");
+export const LAZY_PLUS = Symbol("+?");
+export const LAZY_OPTIONAL = Symbol("??");
 
 export class AstBuilder extends RegexVisitor {
 
@@ -83,6 +86,18 @@ export class AstBuilder extends RegexVisitor {
 
     visitQuestionQuantifier() {
         return OPTIONAL;
+    }
+
+    visitLazyAsteriskQuantifier() {
+        return LAZY_ASTERISK;
+    }
+
+    visitLazyPlusQuantifier() {
+        return LAZY_PLUS;
+    }
+
+    visitLazyQuestionQuantifier() {
+        return LAZY_OPTIONAL;
     }
     
     visitGroupPattern(ctx) {
