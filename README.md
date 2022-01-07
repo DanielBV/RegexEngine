@@ -25,3 +25,10 @@
     - MatchFirst
     - MatchAll
     - Anchors (^ and &)
+
+## Changelog
+# 1.0.0
+* Created base engine
+
+# 1.1.0
+* Added lazy quantifiers (`*?`, `+?` and `??`)
