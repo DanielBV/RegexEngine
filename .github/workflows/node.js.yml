@@ -17,7 +17,7 @@ jobs:
       run:  | 
         shopt -s expand_aliases
         wget https://www.antlr.org/download/antlr-4.9.2-complete.jar
-        alias antlr4='java -jar antlr-4.9.2-complete.jar'
+        java -jar antlr-4.9.2-complete.jar ./src/regex.g4 -o src/grammar/generated -Dlanguage=JavaScript -visitor -no-listener"
         npm run grammar
     - run: npm test
     - run: npm run build
