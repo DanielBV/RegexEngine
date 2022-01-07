@@ -12,6 +12,7 @@ jobs:
       with:
         node-version: '16'
     - run: npm ci
+    - run: npm run grammar
     - run: npm test
     - run: npm run build
     - name: Commit and push
