@@ -42,7 +42,7 @@ function testCase(algorithm, regex, string, result) {
   });
 }
 
-const ALGORITHMS = [ new NFAWrapper(), new NFTWrapper()];
+const ALGORITHMS = [new NFTWrapper()];
 
 describe('test basic regex', () => {
   const CASES = [
@@ -86,6 +86,7 @@ describe('test basic regex', () => {
     [":", ":", true],
     ["[:]", ":", true],
     ["[\\^]", "^", true],
+    ["[$]", "$", true],
     ["[a^]", "^", true],
     ["[^a]+", "a", false],
     ["[^a]+", "b", true],
@@ -94,6 +95,10 @@ describe('test basic regex', () => {
     ["[^a-z]+", "`{", true],
     ["[^a-zA-Z]+", "W", false],
     ["[^a-zA-Zñ]+", "ñ", false],
+    ["^a$", "a", true],
+    ["^a", "ab", false],
+    ["a$", "ba", false],
+
   ];
   for (const algorithm of ALGORITHMS) {
     for (const [regex, string, result] of CASES) {
@@ -120,6 +125,7 @@ describe('Regex escaped characters', () => {
     ["\\<", "<", true],
     ["\\:", ":", true],
     ["\\^", "^", true],
+    ["\\$", "$", true],
   ];
   for (const algorithm of ALGORITHMS) {
     for (const [regex, string, result] of CASES) {

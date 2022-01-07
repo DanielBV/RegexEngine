@@ -1,5 +1,5 @@
 import RegexVisitor from './generated/regexVisitor';
-import {Regex, Expression, AtomicPattern, RegexAlternative, DotPattern, CharacterClass, ComplexClass} from './ast';
+import {Regex, Expression, AtomicPattern, RegexAlternative, DotPattern, CharacterClass, ComplexClass, DollarAnchor, CaretAnchor} from './ast';
 import { EPSILON } from '../engine/dfa';
 
 
@@ -54,6 +54,14 @@ export class AstBuilder extends RegexVisitor {
 
     visitDotPattern() {
         return new DotPattern();
+    }
+
+    visitDollarAnchor() {
+        return new DollarAnchor();
+    }
+
+    visitCaretAnchor() {
+        return new CaretAnchor();
     }
     
     visitComplexCharacterClass(ctx) {

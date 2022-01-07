@@ -30,6 +30,28 @@ export class CharacterMatcher extends Matcher{
 }
 
 
+export class StartOfInputMatcher extends Matcher {
+
+    matches(char, i) {
+        return char === EPSILON && i == 0;
+    }
+
+    get label() {
+        return "$";
+    }
+}
+
+export class EndOfInputMatcher extends Matcher {
+
+    matches(char, i) {
+        return char === "" || char === undefined;
+    }
+
+    get label() {
+        return "$";
+    }
+}
+
 export class DotMatcher extends Matcher {
     matches(char) {
         return char != undefined && char != "" // These two checks are because the compute algorithm of the DPS can call matches with undefined.
@@ -228,6 +250,8 @@ export class NFA extends DFA {
         Computes it in a similar way to a Breadth first search, but the machine is in multiple states at the same time.
          This avoids problems like catastrophic backtracking because it doesn't require backtracking. 
         But this algorithm also doesn't allow capturing groups :(
+        
+        I deprecated this so it also lacks other features that could be implemented but I just didn't. Like anchors (^ & $)
     */
     compute(string) {
         let states = new Set([this.states[this.initialState]]);
@@ -349,14 +373,14 @@ export class CapturingNFT extends NFA{
         const input = remainingString[0];
         // Since it takes into account all the closure at the same time it doesn't have the problem of epsilon loops
         for (const [matcher, toState] of currentState.transitions) {
-            if (matcher.matches(input)) { // Non-epsilon
+            if (matcher.matches(input, i)) { // Non-epsilon
                 const copyMemory = JSON.parse(JSON.stringify(memory));
                 copyMemory.EPSILON_VISITED = [];
                 if (DEBUG) console.log(`${currentState.name} -> ${toState.name} with input ${input}`);
                 const niceTry = this.recursiveCompute(remainingString.substring(1), toState, copyMemory, i+1);
                 if (niceTry.success) return niceTry;
                 if (DEBUG) console.log(`Backtracked to state ${currentState.name}`);
-            } else if (matcher.matches(EPSILON)) {
+            } else if (matcher.matches(EPSILON, i)) {
                     // If you are going to a state that has already been visited in an epsilon transition, you might be in a loop. So don't follow it again
                 if (!memory.EPSILON_VISITED.includes(toState.name)) {
                     if (remainingString.length === 0 && this.endingStates.includes(currentState.name)) {
