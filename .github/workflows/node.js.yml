@@ -24,6 +24,6 @@ jobs:
         git add *
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        git commit -m 'Deploy'
+        git commit -am 'Deploy'
         git push
 
