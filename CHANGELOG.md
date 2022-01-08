@@ -12,7 +12,9 @@ So instead of
 - q1: Ends [1,2]
 - q3: Starts  [1,2]
 - q4: Ends [1,2]
+
 It was generating: 
+
 - q0: Starts [1,2]
 - q1: Ends [1,2]
 - q3: Starts  [1,3]
