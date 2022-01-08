@@ -313,7 +313,7 @@ export class CapturingNFT extends NFA{
     }
 
     compute(string, i=0) {
-        if (DEBUG) console.log("----------------------------------------------------------------------------------------");
+        if (DEBUG) console.log("----------------------------------------------------------------------------------------" + i);
         if (DEBUG) console.log(this);
         return this.recursiveCompute(string, this.states[this.initialState], {ACTIVE_STATES: {}, GROUP_MATCHES:{}, EPSILON_VISITED: []},i);
 

@@ -54,6 +54,7 @@ export class NFARegex {
            const r = this.nfa.compute(string.substring(i), i);
            if (r.success) {
                matches.push(Match.fromNFAResult(string, i, r));
+               if (r.endingPosition === i) break; // This can happen with lazy regex like '.*?'. If they arent stop they'll loop forever
                i = r.endingPosition - 1; // - 1 because when the loop ends it sums 1
            }
         }

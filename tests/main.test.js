@@ -245,7 +245,7 @@ describe('Test regex class', () => {
         {groups: {0: "is green", 1: "is", 2: "green"}, start: 11, end: 19}]],
       ["\\w+\\s+", "the potato is green", [{groups: {0: "the "}, start: 0, end: 4}, 
         {groups: {0: "potato "}, start: 4, end: 11}, {groups: {0: "is "}, start: 11, end: 14}]],
-
+      ["(.*?)", "foo", [{groups: {0: "", 1: ""}, start: 0, end: 0}]],
     ];
     for (const [regex, string, result] of CASES) {
       it (`- regex: '${regex}', string: '${string}', expected: ${JSON.stringify(result)}`, () => {
