@@ -201,6 +201,7 @@ describe('Test capture groups', () => {
     ["(?<name>a+)(?<name>b+)", "aabb", [{group:0, txt: "aabb"},{group: "name", txt: "bb"}]],
     //Non capturing group
     ["((?:ab)+)", "abab", [{group:0, txt: "abab"},{group: 1, txt: "abab"}]],
+    ["((a))+", "aa", [{group:0, txt: "aa"},{group: 1, txt: "a"}, {group: 2, txt: "a"}]],
   ]
 
     for (const [regex, string, result] of CASES) {
