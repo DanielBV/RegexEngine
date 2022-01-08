@@ -335,10 +335,18 @@ export class CapturingNFT extends NFA{
        * The only difference is this also assings the start/endGroups of the deleted state to its replacement
         */
        thompsonAppendNFA(otherNfa, unionState) {
+        const currentStates = Object.keys(this.states);
+        let unionWithSameName = unionState === otherNfa.initialState;
         for (const s in otherNfa.states) {
-            this.states[s] = otherNfa.states[s];
+            if (s === unionState) {
+            // I leave this here to highlight it
+            } else if (currentStates.includes(s.name)) {
+                throw Error("Found duplicated name state - The only duplicated state can be the union state");
+            } else 
+                this.states[s] = otherNfa.states[s];
         } 
-        delete this.states[otherNfa.initialState]; // This state is simplified
+        if (!unionWithSameName)
+            delete this.states[otherNfa.initialState]; // This state is simplified
         for (const [matcher, toTransition] of otherNfa.states[otherNfa.initialState].transitions)
             this.addTransition(unionState, toTransition.name, matcher);
         for (const group of otherNfa.states[otherNfa.initialState].startsGroups)
@@ -419,5 +427,32 @@ export class CapturingNFT extends NFA{
     addGroup(start, end, group) {
         this.states[start].addStartGroup(group);
         this.states[end].addEndGroup(group);
+    }
+
+    /**
+     * 
+     * @param {*} nfa 
+     * @param {*} stateBuilder Function that Generates names of new states. Multiple class to this method must return different unique states
+     */
+    static clone(original, stateBuilder) {
+        const cloned = new CapturingNFT();
+        const translation = {};
+        for (const state in original.states) {
+            const ns = stateBuilder();
+            translation[state] = ns;
+            cloned.addState(ns);
+        }
+        for (const state in original.states) {
+            for (const [matcher, toTransition] of original.states[state].transitions)
+                cloned.addTransition(translation[state], translation[toTransition.name], matcher);
+            for (const group of original.states[state].startsGroups)
+                cloned.states[translation[state]].addStartGroup(group);
+            for (const group of original.states[state].endsGroups)
+                cloned.states[translation[state]].addEndGroup(group);
+        }
+
+        cloned.setInitialState(translation[original.initialState]);
+        cloned.setEndingStates(original.endingStates.map(x => translation[x]));
+        return cloned;
     }
 }
