@@ -1,5 +1,5 @@
 import RegexVisitor from './generated/regexVisitor';
-import {Regex, Expression, AtomicPattern, RegexAlternative, DotPattern, CharacterClass, ComplexClass} from './ast';
+import {Regex, Expression, AtomicPattern, RegexAlternative, DotPattern, CharacterClass, ComplexClass, DollarAnchor, CaretAnchor} from './ast';
 import { EPSILON } from '../engine/dfa';
 
 
@@ -13,7 +13,7 @@ export const LAZY_OPTIONAL = Symbol("??");
 export class AstBuilder extends RegexVisitor {
 
     visitMain(ctx) {
-        return this.visit(ctx.regex());
+        return this.visit(ctx.regex()).nonCapturing();
     }
 
     visitRegex(ctx) {
@@ -55,8 +55,17 @@ export class AstBuilder extends RegexVisitor {
     visitDotPattern() {
         return new DotPattern();
     }
+
+    visitDollarAnchor() {
+        return new DollarAnchor();
+    }
+
+    visitCaretAnchor() {
+        return new CaretAnchor();
+    }
     
     visitComplexCharacterClass(ctx) {
+        const negated = Boolean(ctx.negated);
         const children = this.visit(ctx.complexCCPiece());
         const single = [];
         const ranges = [];
@@ -64,7 +73,7 @@ export class AstBuilder extends RegexVisitor {
             if (c.length === 1) single.push(c[0]);
             else ranges.push(c);
         }
-        return new ComplexClass(single, ranges, ctx.getText());
+        return new ComplexClass(single, ranges, ctx.getText(), negated);
     }
     
     visitComplexClass(ctx) {
@@ -105,7 +114,10 @@ export class AstBuilder extends RegexVisitor {
     }
 
     visitRegexGroup(ctx) {
-        return this.visit(ctx.regex());
+        const alternative = this.visit(ctx.regex());
+        alternative.groupName = ctx.name.map(x => x.text).join("");
+        if (ctx.nonCapture) alternative.nonCapturing();
+        return alternative;
     }
 
     visitPlusQuantifier() {

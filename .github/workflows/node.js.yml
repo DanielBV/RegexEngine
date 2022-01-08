@@ -13,8 +13,7 @@ jobs:
         node-version: '16'
     - run: npm ci
     - name: Install antlr4
-      run:  | 
-        wget https://www.antlr.org/download/antlr-4.9.2-complete.jar
+      run:  wget https://www.antlr.org/download/antlr-4.9.2-complete.jar
     - name: Compile grammar
       run: java -jar antlr-4.9.2-complete.jar ./src/regex.g4 -o ./src/grammar/generated -Dlanguage=JavaScript -visitor -no-listener -Xexact-output-dir
     - run: npm test
@@ -22,9 +21,10 @@ jobs:
     - name: Commit and push
       run: |
         cd docs/
-        git add *
+        git add -A *
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
+        git status
         git commit -m 'Deploy'
         git push
 

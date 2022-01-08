@@ -1,12 +1,16 @@
-import { AtomicPattern, CharacterClass, ComplexClass, DotPattern, Regex, RegexAlternative } from "../grammar/ast";
+import { AtomicPattern, CaretAnchor, CharacterClass, ComplexClass, DollarAnchor, DotPattern, Regex, RegexAlternative } from "../grammar/ast";
 import { ASTERISK, LAZY_ASTERISK, OPTIONAL, PLUS, LAZY_PLUS, LAZY_OPTIONAL } from "../grammar/astBuilder";
-import { CharacterMatcher, DotMatcher, EPSILON, NegatedMatcher, NFA, PositiveMatcher } from "./dfa";
+import { CapturingNFT, CharacterMatcher, DotMatcher, EndOfInputMatcher, EPSILON, NegatedMatcher, NFA, PositiveMatcher, StartOfInputMatcher } from "./dfa";
 
 let i = 0;
 function newState() {
     const c = `q${i}`;
     i++;
     return c;
+}
+
+function stateBack() {
+    i -= 1;
 }
 
 let g = 1;
@@ -64,15 +68,18 @@ export class ConversionBuilder {
             resetStateNumbers();
             resetGroupNumbers();
         }
+        let isFirst = true;
         for (const c of regexAST.subpatterns) {
-            let baseBuilder, base, baseIsCapturing;
+            let baseBuilder, base, baseIsCapturing, namedGroup = null;
             if (c.child instanceof AtomicPattern) {
                 baseBuilder = () => this._atomicPatternNFA(c.child.char);
             } else if (c.child instanceof RegexAlternative) {  // Groups
-                baseIsCapturing = true;
+                baseIsCapturing = c.child.isCapturingGroup();
+                namedGroup = c.child.groupName;
                 baseBuilder = (groupNumber) => this._alternativeToNFA(c.child, false, groupNumber);
             } else if (c.child instanceof Regex) { // Groups
-                baseIsCapturing = true;
+                baseIsCapturing = c.child.isCapturingGroup();
+                namedGroup = c.child.groupName;
                 baseBuilder = (groupNumber) => this.regexToNFA(c.child, false, groupNumber);
             } else if (c.child instanceof DotPattern) {
                 baseBuilder = () => this._dotPatternNFA();
@@ -80,24 +87,41 @@ export class ConversionBuilder {
                 baseBuilder = () => this._characterClassNFA(c.child.class);
             } else if (c.child instanceof ComplexClass) {
                 baseBuilder = () => this._complexCharacterClassNFA(c.child);
-            }
+            } else if (c.child instanceof DollarAnchor)
+                baseBuilder = () => this._oneStepNFA(new EndOfInputMatcher());
+            else if (c.child instanceof CaretAnchor)
+                baseBuilder = () => this._oneStepNFA(new StartOfInputMatcher());
     
+            // Lazy to avoid creating unnecessary groups.
+            const groupBuilder = () => namedGroup ? namedGroup : newGroup();
     
+            /* This is a minor detail to make sure the states name don't skip any name 
+                Doing it shouldn't have any effect on the final result, but it generates a prettier diagram.
+                The basics of this is: 
+                - CapturingNFT.thompsonAppend allows the unionState and the otherNFA.initialState to have the same 
+                    - Whether it has the same name or not, the state 'otherNFA.initialState' is deleted. The difference is that if 
+                    they have a differen't names there will be a gap in the names
+                - But because the nfa pieces are build independently, the names will never coincide. To force it to coincide we can 
+                  just decrease the current state number. But this shouldn't be done for the first node (I don't want a q-1 state)
+            */
+            if (isFirst) isFirst = false;
+            else stateBack();
+
             if (c.quantifier === ASTERISK || c.quantifier === LAZY_ASTERISK) {
-                base = this._asterisk(() => baseBuilder(baseIsCapturing ? newGroup() : null), c.quantifier === LAZY_ASTERISK);
+                base = this._asterisk(() => baseBuilder(baseIsCapturing ? groupBuilder() : null), c.quantifier === LAZY_ASTERISK);
             } else if (c.quantifier === PLUS || c.quantifier === LAZY_PLUS) {
-                const group = baseIsCapturing ? newGroup() : null;
+                const group = baseIsCapturing ? groupBuilder() : null;
                 base = baseBuilder(group);
-                const extraPart = this._asterisk(() => baseBuilder(group), c.quantifier === LAZY_PLUS);
+                const extraPart = this._asterisk(() => CapturingNFT.clone(base, () => newState()), c.quantifier === LAZY_PLUS);
                 base.thompsonAppendNFA(extraPart, base.endingStates[0]);
             } else if (c.quantifier === OPTIONAL || c.quantifier === LAZY_OPTIONAL) {
-                base = baseBuilder(baseIsCapturing ? newGroup() : null);
+                base = baseBuilder(baseIsCapturing ? groupBuilder() : null);
                 if (c.quantifier === LAZY_OPTIONAL)
                     base.unshiftTransition(base.initialState, base.endingStates[0], new CharacterMatcher(EPSILON));
                 else 
                     base.addTransition(base.initialState, base.endingStates[0], new CharacterMatcher(EPSILON));
             } else {
-                base = baseBuilder(baseIsCapturing ? newGroup() : null);
+                base = baseBuilder(baseIsCapturing ? groupBuilder() : null);
             }
             if (nfa === null) 
                 nfa = base 
@@ -148,7 +172,10 @@ export class ConversionBuilder {
 
     _complexCharacterClassNFA(ccc) {
         const matcherLambda = (char) => ccc.matches(char);
-        return this._oneStepNFA(new PositiveMatcher(matcherLambda, ccc.name));
+        if (ccc.negated) 
+            return this._oneStepNFA(new NegatedMatcher((char) => !matcherLambda(char), ccc.name));
+        else 
+            return this._oneStepNFA(new PositiveMatcher(matcherLambda, ccc.name));
     }
 
     _oneStepNFA(matcher) {
