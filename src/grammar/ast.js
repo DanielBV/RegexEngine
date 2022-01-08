@@ -76,3 +76,11 @@ export class ComplexClass {
         return this.chars.includes(c) || this.ranges.some(([start, end]) => c >= start && end >= c);
     }
 }
+
+export class DollarAnchor {
+
+}
+
+export class CaretAnchor {
+    
+}

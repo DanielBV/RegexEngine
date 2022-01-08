@@ -1,6 +1,6 @@
-import { AtomicPattern, CharacterClass, ComplexClass, DotPattern, Regex, RegexAlternative } from "../grammar/ast";
+import { AtomicPattern, CaretAnchor, CharacterClass, ComplexClass, DollarAnchor, DotPattern, Regex, RegexAlternative } from "../grammar/ast";
 import { ASTERISK, LAZY_ASTERISK, OPTIONAL, PLUS, LAZY_PLUS, LAZY_OPTIONAL } from "../grammar/astBuilder";
-import { CharacterMatcher, DotMatcher, EPSILON, NegatedMatcher, NFA, PositiveMatcher } from "./dfa";
+import { CharacterMatcher, DotMatcher, EndOfInputMatcher, EPSILON, NegatedMatcher, NFA, PositiveMatcher, StartOfInputMatcher } from "./dfa";
 
 let i = 0;
 function newState() {
@@ -82,7 +82,10 @@ export class ConversionBuilder {
                 baseBuilder = () => this._characterClassNFA(c.child.class);
             } else if (c.child instanceof ComplexClass) {
                 baseBuilder = () => this._complexCharacterClassNFA(c.child);
-            }
+            } else if (c.child instanceof DollarAnchor)
+                baseBuilder = () => this._oneStepNFA(new EndOfInputMatcher());
+            else if (c.child instanceof CaretAnchor)
+                baseBuilder = () => this._oneStepNFA(new StartOfInputMatcher());
     
             // Lazy to avoid creating unnecessary groups.
             const groupBuilder = () => namedGroup ? namedGroup : newGroup();

@@ -1,6 +1,7 @@
 
 import { ConversionBuilder } from '../src/engine/conversions';
-import { CapturingNFT, NFA } from '../src/engine/dfa';
+import { CapturingNFT } from '../src/engine/dfa';
+import { NFARegex } from '../src/engine/regex';
 import parseRegex from '../src/grammar/parser';
 
 class AlgorithmWrapper {
@@ -12,24 +13,13 @@ class AlgorithmWrapper {
     return false;
   }
 }
-
-class NFAWrapper extends AlgorithmWrapper {
-  getBuilder() {
-    return new ConversionBuilder(() => new NFA());
-  }
-
-  hasMatched(computedResult) {
-    return computedResult;
-  }
-}
-
 class NFTWrapper extends AlgorithmWrapper {
   getBuilder() {
     return new ConversionBuilder(() => new CapturingNFT())
   }
 
   hasMatched(computedResult) {
-    return computedResult.matched();
+    return computedResult.success;
   }
 }
 
@@ -42,7 +32,7 @@ function testCase(algorithm, regex, string, result) {
   });
 }
 
-const ALGORITHMS = [ new NFAWrapper(), new NFTWrapper()];
+const ALGORITHMS = [new NFTWrapper()];
 
 describe('test basic regex', () => {
   const CASES = [
@@ -86,6 +76,7 @@ describe('test basic regex', () => {
     [":", ":", true],
     ["[:]", ":", true],
     ["[\\^]", "^", true],
+    ["[$]", "$", true],
     ["[a^]", "^", true],
     ["[^a]+", "a", false],
     ["[^a]+", "b", true],
@@ -94,6 +85,10 @@ describe('test basic regex', () => {
     ["[^a-z]+", "`{", true],
     ["[^a-zA-Z]+", "W", false],
     ["[^a-zA-Zñ]+", "ñ", false],
+    ["^a$", "a", true],
+    ["^a", "ab", true],
+    ["a$", "ba", false],
+    ["^a$", "ab", false],
   ];
   for (const algorithm of ALGORITHMS) {
     for (const [regex, string, result] of CASES) {
@@ -120,6 +115,7 @@ describe('Regex escaped characters', () => {
     ["\\<", "<", true],
     ["\\:", ":", true],
     ["\\^", "^", true],
+    ["\\$", "$", true],
   ];
   for (const algorithm of ALGORITHMS) {
     for (const [regex, string, result] of CASES) {
@@ -148,7 +144,7 @@ describe('Regex character classes', () => {
     ["\\d+", "/", false],
     ["\\d+", ":", false],
     ["\\D+", "a@^ª'¡€", true],
-    ["\\D+", "a\n", false],
+    ["^\\D+$", "a\n", false],
     ["\\D+", "1", false],
     ["\\D+", "9", false],
     ["\\w+", "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_", true],
@@ -164,7 +160,7 @@ describe('Regex character classes', () => {
     ["\\W+", "{", true],
     ["\\W+", "[", true],
     ["\\W+", "/", true],
-    ["\\W+", ":\n", false],
+    ["^\\W+$", ":\n", false],
     ["\\W+", "a", false],
     ["\\W+", "z", false],
     ["\\W+", "A", false],
@@ -208,13 +204,62 @@ describe('Test capture groups', () => {
   ]
 
     for (const [regex, string, result] of CASES) {
-      const ast = parseRegex(regex);
-      const cb = new NFTWrapper().getBuilder();
-      const nfa = cb.regexToNFA(ast);
-      const match = nfa.compute(string);
-      for (const group of result) {
-        expect(match.group(group.group)).toBe(group.txt);
+      it (`- regex: '${regex}', string: '${string}', expected: ${JSON.stringify(result)}`, () => {
+        const re = new NFARegex(regex);
+        const match = re.findFirstMatch(string);
         expect(Object.keys(match.groups()).length).toBe(result.length)
+        for (const group of result) {
+          expect(match.group(group.group)).toBe(group.txt);
+        }
+      });
+    }
+});
+
+describe('Test regex class', () => {
+
+  it('findFirstMatch', () => {
+    const CASES = [
+      ["^a$", "ba", null],
+      ["a", "ba", {groups: {0: "a"}, start: 1, end: 2}],
+    ];
+    for (const [regex, string, result] of CASES) {
+      const re = new NFARegex(regex);
+      const match = re.findFirstMatch(string);
+      if (result === null) expect(match).toBe(result);
+      else {
+        expect(match.start).toBe(result.start);
+        expect(match.end).toBe(result.end);
+        expect(Object.keys(match.groups()).length).toBe(Object.keys(result.groups).length);
+        for (const key in result.groups) 
+          expect(match.group(key)).toBe(result.groups[key]);
       }
     }
+  });
+
+  describe('findAllMatches', () => {
+    const CASES = [
+      ["^a$", "ba", []],
+      ["a", "a a a", [{groups: {0: "a"}, start: 0, end: 1}, {groups: {0: "a"}, start: 2, end: 3}, {groups: {0: "a"}, start: 4, end: 5}]],
+      ["(\\w+)\\s+(\\w+)", "the potato is green", [{groups: {0: "the potato", 1: "the", 2: "potato"}, start: 0, end: 10}, 
+        {groups: {0: "is green", 1: "is", 2: "green"}, start: 11, end: 19}]],
+      ["\\w+\\s+", "the potato is green", [{groups: {0: "the "}, start: 0, end: 4}, 
+        {groups: {0: "potato "}, start: 4, end: 11}, {groups: {0: "is "}, start: 11, end: 14}]],
+
+    ];
+    for (const [regex, string, result] of CASES) {
+      it (`- regex: '${regex}', string: '${string}', expected: ${JSON.stringify(result)}`, () => {
+        const re = new NFARegex(regex);
+        const matches = re.findAllMatches(string);
+        expect(matches.length).toBe(result.length);
+        for (let i = 0; i < matches.length; i++) {
+          expect(matches[i].start).toBe(result[i].start);
+          expect(matches[i].end).toBe(result[i].end);
+          expect(Object.keys(matches[i].groups()).length).toBe(Object.keys(result[i].groups).length);
+          for (const key in result[i].groups) 
+            expect(matches[i].group(key)).toBe(result[i].groups[key]);
+        }
+      });
+    }
+  });
+  
 });
