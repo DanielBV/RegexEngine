@@ -281,10 +281,11 @@ export class CapturingNFTState extends NFAState {
     }
 }
 
-class ExecResult {
-    constructor(matched, string, groups) {
+export class ExecResult {
+    constructor(matched, string, groups,endingPosition) {
         this._matched = matched;
         this._groups = {};
+        this.endingPosition = endingPosition;
         if (this._matched) this._groups[0] = string;
         Object.values(groups).forEach(([i, start, end]) => this._groups[i] = string.substring(start,end));
     }
@@ -300,7 +301,6 @@ class ExecResult {
     groups() {
         return this._groups;
     }
-    
 }
 
 export class CapturingNFT extends NFA{
@@ -312,11 +312,11 @@ export class CapturingNFT extends NFA{
         this.states[name] = new CapturingNFTState(name);
     }
 
-    compute(string) {
+    compute(string, i=0) {
         if (DEBUG) console.log("----------------------------------------------------------------------------------------");
         if (DEBUG) console.log(this);
-        const match = this.recursiveCompute(string, this.states[this.initialState], {ACTIVE_STATES: {}, GROUP_MATCHES:{}, EPSILON_VISITED: []},0);
-        return new ExecResult(match.success, string, match.GROUP_MATCHES);
+        return this.recursiveCompute(string, this.states[this.initialState], {ACTIVE_STATES: {}, GROUP_MATCHES:{}, EPSILON_VISITED: []},i);
+
     }
 
     computeGroups(currentState, memory, i) {
@@ -361,12 +361,14 @@ export class CapturingNFT extends NFA{
      * @returns 
      */
     recursiveCompute(remainingString, currentState, memory, i) {
+        //TODO ------------------- ESTO CREO QUE LO HE ROTO AL PONER I!=0 EN EL NO RECURSIVO :(
         this.computeGroups(currentState, memory, i);
          //TODO no tengo muy claro si esto dara problemas si justo el último estado acaba un grupo
-        if (remainingString.length === 0 && this.endingStates.includes(currentState.name)) {
+        if (this.endingStates.includes(currentState.name)) {
             // The closure can't be used here because then it wouldn't compute the groups of the final state. And computing the groups of all epsilon transitions
             // could lead to invalid results
             memory.success = this.endingStates.includes(currentState.name);
+            memory.endingPosition = i;
             return memory;
         }
 
@@ -384,6 +386,8 @@ export class CapturingNFT extends NFA{
                     // If you are going to a state that has already been visited in an epsilon transition, you might be in a loop. So don't follow it again
                 if (!memory.EPSILON_VISITED.includes(toState.name)) {
                     if (remainingString.length === 0 && this.endingStates.includes(currentState.name)) {
+                        // TODO este comment está un poco deprecado. Ahora la i es para detectar el primer caracter de la cadena ORIGINAL (que puede no ser
+                        // la cadena que se está computando)
                         // This is a shortcut to avoid unnecesary backtracking. I need to find a way to make this code more clear.
                         // Example: 
                         //      - Starting state: q0
@@ -406,14 +410,9 @@ export class CapturingNFT extends NFA{
                 } 
             }
         }
-        if (remainingString.length === 0) {
-            // The closure can't be used here because then it wouldn't compute the groups of the final state. And computing the groups of all epsilon transitions
-            // could lead to invalid results
-            memory.success = this.endingStates.includes(currentState.name);
-            return memory;
-        }
-
-        memory.success = false;
+       
+        memory.success = this.endingStates.includes(currentState.name);
+        memory.endingPosition = i;
         return memory;
     }
 

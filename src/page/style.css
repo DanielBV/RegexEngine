@@ -10,6 +10,18 @@ body, #page, #root{
     height: 100%;
 }
 
+.greenDecorator {
+    background: rgba(146, 206, 42, 0.5);
+}
+  
+.blueDecorator {
+    background: rgba(3, 141, 175, 0.5);
+}
+
+.yellowDecorator {
+    background: rgba(255, 138, 5, 0.5);
+}
+  
 #page{
     display:flex;
     flex-direction: column;
@@ -41,10 +53,7 @@ body, #page, #root{
     min-width: 70vw;
     margin-right: 10px;
     height: 100%;
-    resize: none;
-}
-.textInput:focus {
-    box-shadow:none !important;
+    border: gray solid 1px;
 }
 
 #regexLabel{
@@ -111,11 +120,35 @@ body, #page, #root{
 }
 
 .resultSection{
-    overflow: hidden;
+    overflow: auto;
+    width: 100%;
 }
 
 .versionLabel{
     display: inline;
     color: #6c757d;
     font-size: 14px;
+}
+
+.completeLine{
+    width: 100% !important;
+}
+
+.selectedMatch{
+    border: rgba(128, 128, 128, 0.733) solid 2px;
+}
+
+.resultTutorial {
+    color: #6c757d;
+    font-size: 14px;
+}
+
+.groupLabel{
+    color: rgb(113, 106, 106);
+    font-size: 15px;
+    font-weight: 505;
+}
+
+.groupText {
+    font-size: 15px;
 }

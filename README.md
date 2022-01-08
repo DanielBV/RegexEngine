@@ -17,16 +17,20 @@
     * `\s`: Matches whitespace charactrers
     * `\S`: Matches non-whitespace characters
     * `[a-zA-Z]`: Matches all characters between a-z and A-Z
-    * `[a-zA-Z]`: Matches any character that isn't between a-z and A-Z
-
-## Pending features
-- Negated character class ([^])
-- ¿Non-greedy interface? - Spoiler: This might not happen at all.
-    - MatchFirst
-    - MatchAll
-    - Anchors (^ and &)
+    * `[^a-zA-Z]`: Matches any character that isn't between a-z and A-Z
+* `findFirstMatch` and `findAllMatches`.
 
 ## Changelog
+# 1.3.0
+* Updated regex backtracking algorithm to allow not consuming the whole input.
+    * Previously every regex had implicitly a end of input anchor (`regex$`)
+        * This means that the regex `a` didn't find any match in the input `aa`. Now it matches the first `a`.
+* Added class `NFARegex` to abstract the regex parsing and NFA creation.
+    * Includes the methods `findFirstMatch` and `findAllMatches`.
+* Replaced the input textarea with monaco editor. 
+    * Added highlighting of the matches
+    * Now the 'Results' panel shows the groups of the selected match. You can click on a match to select it.
+        * This was ~~plagiarized~~ inspired by https://regexr.com/
 # 1.2.0
 * Added named capturing groups
 * Added non capturing groups
