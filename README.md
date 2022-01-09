@@ -29,7 +29,7 @@ npm run test
 This project includes a page to test and visualize the regex. 
 ![Regex engine page](./img/page.png)
 
-### Build with
+### Built with
 * React
 * React-bootstrap
 * Monaco  - Input editor
@@ -76,8 +76,8 @@ Quantifiers specify how many times a part of the regular expression should be re
 
 Quantifiers are greedy by default, so they'll match as much input as they can. To make them lazy add a `?` at the end: `*?`, `+?` and `??`
 
-> A regex like `.*(\w+).*` would fail to capture complete words because the `.*` is greedy. For the input `aaa` the  `(\w+)` would only match ç
-> one `a`. To fix this make both `.*` lazy: `.*?(\w+).*?`
+> A regex like `.*(\w+).*` would fail to capture complete words because `.*` is greedy. For the input `aaa` the regex `(\w+)` would 
+> only match one `a`. To fix this make both `.*` lazy: `.*?(\w+).*?`
 
 ### Capturing groups
 Capturing groups allow to extract the part of the input that matched the group. 
@@ -125,7 +125,7 @@ the group instead of a increasing number using `(?<name>subexpression)` :
   </tr>
 </table>
 
-If you want to group a expression but don't want to capture it, you can use a non capturing group `(?:subexpression)`
+If you want to group a expression but don't want to capture it, use a non capturing group `(?:subexpression)`
 <table>
   <tr>
     <td><b>Regex<b></td>
@@ -220,7 +220,7 @@ Note: Some regex engines have multiline modes, in which the meaning of these anc
 - `{n}`, `{n,}` and `{n,m}` quantifiers
 - Backreferences (might be relatively easy if I change the matchers to decide how much input it consumes and giving it access to the memory)
 - Multiple modes (case insensitive, multiline)
-* Unicode escaping
+- Unicode escaping
 
 ## License
 Distributed under the MIT License. See LICENSE.txt for more information.
