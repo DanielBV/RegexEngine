@@ -156,6 +156,7 @@ There are multiple characters that have a special meaning. If instead you want t
 Anchors are a bit weird because they don't match characters. Instead they match positions:
 * `^`: Matches the beginning of the string
 * `$`: Matches the end of the string
+
 Note: Some regex engines have multiline modes, in which the meaning of these anchors get expanded. Sadly this engine hasn't that mode :(.
 
 **Without anchors**:
