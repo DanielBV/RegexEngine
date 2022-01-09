@@ -133,7 +133,8 @@ export default class MainPage extends React.Component {
             scrollbar: {
                 vertical: "auto"
             },
-            renderWhitespace: true
+            renderWhitespace: true,
+            wordWrap: true
           };
 
         const editorDidMount = (editor, monaco) => {

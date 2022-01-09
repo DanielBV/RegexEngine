@@ -27,6 +27,8 @@ npm run test
 
 ## About the page
 This project includes a page to test and visualize the regex. 
+![Regex engine page](./img/page.png)
+
 ### Build with
 * React
 * React-bootstrap
