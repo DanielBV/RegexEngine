@@ -224,4 +224,4 @@ Note: Some regex engines have multiline modes, in which the meaning of these anc
 - Unicode escaping
 
 ## License
-Distributed under the MIT License. See LICENSE.txt for more information.
+Distributed under the MIT License. See LICENSE.md for more information.
