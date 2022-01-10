@@ -1,4 +1,4 @@
-import { EPSILON } from "./dfa";
+import { EPSILON } from "./nfa";
 
 class Matcher {
     matches(char) {

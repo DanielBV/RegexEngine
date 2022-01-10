@@ -1,6 +1,6 @@
 
 import { ConversionBuilder } from '../src/engine/conversions';
-import { EngineNFA } from '../src/engine/dfa';
+import { EngineNFA } from '../src/engine/nfa';
 import { NFARegex } from '../src/engine/regex';
 import parseRegex from '../src/grammar/parser';
 

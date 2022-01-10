@@ -1,6 +1,6 @@
 import parseRegex from "../grammar/parser";
 import { ConversionBuilder } from "./conversions";
-import { EngineNFA } from "./dfa";
+import { EngineNFA } from "./nfa";
 
 
 export class Match {

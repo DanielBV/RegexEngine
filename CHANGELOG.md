@@ -4,6 +4,8 @@
 * Removed trim() in non-empty check for regex and text input. This way `    ` is considered a valid regex.
 * The result label is no longer sticky
 * Small refactors and cleaning
+* Made a decent README
+* Added MIT license
 
 ## 1.3.2 
 * Fixed bug with `findAllMatches` when the regex was fully lazy. For example `.*?`.

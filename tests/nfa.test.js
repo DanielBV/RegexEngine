@@ -1,4 +1,4 @@
-import { EngineNFA, EPSILON } from "../src/engine/dfa";
+import { EngineNFA, EPSILON } from "../src/engine/nfa";
 import { CharacterMatcher } from "../src/engine/matchers";
 
 describe('nfa - append', () => {
