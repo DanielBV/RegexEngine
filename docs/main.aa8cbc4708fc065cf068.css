@@ -2479,7 +2479,7 @@ body, #page, #root{
 
 }
 
-#nfaHeader, #resultHeader{
+#nfaHeader{
     display: inline;
     position: sticky;
     top: 5px;
