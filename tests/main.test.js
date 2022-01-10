@@ -1,6 +1,6 @@
 
 import { ConversionBuilder } from '../src/engine/conversions';
-import { CapturingNFT } from '../src/engine/dfa';
+import { EngineNFA } from '../src/engine/dfa';
 import { NFARegex } from '../src/engine/regex';
 import parseRegex from '../src/grammar/parser';
 
@@ -15,7 +15,7 @@ class AlgorithmWrapper {
 }
 class NFTWrapper extends AlgorithmWrapper {
   getBuilder() {
-    return new ConversionBuilder(() => new CapturingNFT())
+    return new ConversionBuilder(() => new EngineNFA())
   }
 
   hasMatched(computedResult) {

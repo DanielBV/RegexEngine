@@ -1,6 +1,6 @@
 import { AtomicPattern, CaretAnchor, CharacterClass, ComplexClass, DollarAnchor, DotPattern, Regex, RegexAlternative } from "../grammar/ast";
 import { ASTERISK, LAZY_ASTERISK, OPTIONAL, PLUS, LAZY_PLUS, LAZY_OPTIONAL } from "../grammar/astBuilder";
-import { CapturingNFT, EPSILON } from "./dfa";
+import { EngineNFA, EPSILON } from "./dfa";
 import {CharacterMatcher, DotMatcher, EndOfInputMatcher, NegatedMatcher, PositiveMatcher, StartOfInputMatcher} from './matchers';
 
 
@@ -100,7 +100,7 @@ export class ConversionBuilder {
             /* This is a minor detail to make sure the states name don't skip any name 
                 Doing it shouldn't have any effect on the final result, but it generates a prettier diagram.
                 The basics of this is: 
-                - CapturingNFT.thompsonAppend allows the unionState and the otherNFA.initialState to have the same 
+                - EngineNFA.thompsonAppend allows the unionState and the otherNFA.initialState to have the same 
                     - Whether it has the same name or not, the state 'otherNFA.initialState' is deleted. The difference is that if 
                     they have a differen't names there will be a gap in the names
                 - But because the nfa pieces are build independently, the names will never coincide. To force it to coincide we can 
@@ -114,7 +114,7 @@ export class ConversionBuilder {
             } else if (c.quantifier === PLUS || c.quantifier === LAZY_PLUS) {
                 const group = baseIsCapturing ? groupBuilder() : null;
                 base = baseBuilder(group);
-                const extraPart = this._asterisk(() => CapturingNFT.clone(base, () => newState()), c.quantifier === LAZY_PLUS);
+                const extraPart = this._asterisk(() => EngineNFA.clone(base, () => newState()), c.quantifier === LAZY_PLUS);
                 base.thompsonAppendNFA(extraPart, base.endingStates[0]);
             } else if (c.quantifier === OPTIONAL || c.quantifier === LAZY_OPTIONAL) {
                 base = baseBuilder(baseIsCapturing ? groupBuilder() : null);

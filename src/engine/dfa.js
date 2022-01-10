@@ -27,29 +27,10 @@ export class State {
     }
 }
 
-export class ExecResult {
-    constructor(matched, string, groups,endingPosition) {
-        this._matched = matched;
-        this._groups = {};
-        this.endingPosition = endingPosition;
-        if (this._matched) this._groups[0] = string;
-        Object.values(groups).forEach(([i, start, end]) => this._groups[i] = string.substring(start,end));
-    }
-
-    matched() {
-        return this._matched;
-    }
-
-    group(i) {
-        return this._groups[i];
-    }
-
-    groups() {
-        return this._groups;
-    }
-}
-
-export class CapturingNFT {
+/**
+ * A NFA that has been modified to allow capturing groups. This would make it more like a transducer than an accepter
+ */
+export class EngineNFA {
     constructor() {
         this.states = {};
         this.initialState = null;
@@ -213,7 +194,7 @@ export class CapturingNFT {
      * @param {*} stateBuilder Function that Generates names of new states. Multiple class to this method must return different unique states
      */
     static clone(original, stateBuilder) {
-        const cloned = new CapturingNFT();
+        const cloned = new EngineNFA();
         const translation = {};
         for (const state in original.states) {
             const ns = stateBuilder();

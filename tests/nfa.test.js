@@ -1,15 +1,15 @@
-import { CapturingNFT, EPSILON, NFA } from "../src/engine/dfa";
+import { EngineNFA, EPSILON } from "../src/engine/dfa";
 import { CharacterMatcher } from "../src/engine/matchers";
 
 describe('nfa - append', () => {
     test('basic works', () => {
-        const nfa1 = new CapturingNFT();
+        const nfa1 = new EngineNFA();
         nfa1.declareStates("q0", "q1");
         nfa1.setInitialState("q0");
         nfa1.setEndingStates(["q1"]);
         nfa1.addTransition("q0", "q1", new CharacterMatcher("a"));
       
-        const nfa2 = new CapturingNFT();
+        const nfa2 = new EngineNFA();
         nfa2.declareStates("q2", "q3");
         nfa2.setInitialState("q2");
         nfa2.setEndingStates(["q3"]);
@@ -22,13 +22,13 @@ describe('nfa - append', () => {
       });
 
     test('thompson append with duplicated union name', () => {
-      const nfa1 = new CapturingNFT();
+      const nfa1 = new EngineNFA();
       nfa1.declareStates("q0", "q1");
       nfa1.setInitialState("q0");
       nfa1.setEndingStates(["q1"]);
       nfa1.addTransition("q0", "q1", new CharacterMatcher("a"));
 
-      const nfa2 = new CapturingNFT();
+      const nfa2 = new EngineNFA();
       nfa2.declareStates("q1", "q2");
       nfa2.setInitialState("q1");
       nfa2.setEndingStates(["q2"]);
