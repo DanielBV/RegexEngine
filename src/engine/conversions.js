@@ -1,6 +1,8 @@
 import { AtomicPattern, CaretAnchor, CharacterClass, ComplexClass, DollarAnchor, DotPattern, Regex, RegexAlternative } from "../grammar/ast";
 import { ASTERISK, LAZY_ASTERISK, OPTIONAL, PLUS, LAZY_PLUS, LAZY_OPTIONAL } from "../grammar/astBuilder";
-import { CapturingNFT, CharacterMatcher, DotMatcher, EndOfInputMatcher, EPSILON, NegatedMatcher, NFA, PositiveMatcher, StartOfInputMatcher } from "./dfa";
+import { CapturingNFT, EPSILON } from "./dfa";
+import {CharacterMatcher, DotMatcher, EndOfInputMatcher, NegatedMatcher, PositiveMatcher, StartOfInputMatcher} from './matchers';
+
 
 let i = 0;
 function newState() {
@@ -128,7 +130,7 @@ export class ConversionBuilder {
             else 
                 nfa.thompsonAppendNFA(base, nfa.endingStates[0]);
         }
-        if (capturingGroupNumber !== null && nfa.allowsCapturingGroups()) nfa.addGroup(nfa.initialState, nfa.endingStates[0], capturingGroupNumber); 
+        if (capturingGroupNumber !== null) nfa.addGroup(nfa.initialState, nfa.endingStates[0], capturingGroupNumber); 
         return nfa;
     }
 
@@ -210,7 +212,7 @@ export class ConversionBuilder {
         nfa.addState(end);
         endingStates.forEach(x => nfa.addTransition(x, end, EPSILON_MATCHER));
         nfa.setEndingStates([end]);
-        if (capturingGroupNumber !== null && nfa.allowsCapturingGroups()) nfa.addGroup(start, end, capturingGroupNumber);
+        if (capturingGroupNumber !== null) nfa.addGroup(start, end, capturingGroupNumber);
         return nfa;
     }
 }
