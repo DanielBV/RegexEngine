@@ -9,6 +9,7 @@ import MonacoEditor from 'react-monaco-editor';
 import './style.css';
 import { NFARegex } from "../engine/regex";
 import ResultComponent from "./ResultComponent";
+import { defineAndSetTheme, MONACO_EDITOR_OPTIONS } from "./visualization/utils";
 
 const decorationsColors = [
     "greenDecorator", "blueDecorator", "yellowDecorator"
@@ -38,14 +39,13 @@ export default class MainPage extends React.Component {
             const dot = nfaToDot(_regex.nfa);
             return {valid: true, regex: _regex, dot};
         } catch (e) {
-            return {valid: regex.trim() === ""};
+            return {valid: regex === ""};
         }
     }
     
     componentDidUpdate(prevProps, prevState) {
         if (prevState.regex !== this.state.regex) {
-            this.resultComponent.current.setGroup(null);
-            this.highlightMatches(null);
+            this.selectMatch(null);
         }
     }
 
@@ -104,68 +104,44 @@ export default class MainPage extends React.Component {
             this.decorator = this.editor.deltaDecorations(this.decorator, decorations);
     }
 
+    selectMatch(i) {
+        this.resultComponent.current.setGroup(i);
+        this.highlightMatches(i);
+    }
+
+    findClickedMatch(x) {
+        let i = 0;
+        for (const [start, end] of this.matchesPositions) {
+            const s = this.editor.getModel().getPositionAt(start);
+            const e = this.editor.getModel().getPositionAt(end);
+            if (new this.monaco.Range(s.lineNumber, s.column, e.lineNumber, e.column).containsPosition(x.position)) {
+               return i;
+            }
+            i++;
+        }
+        return null;
+    }
 
     render() {
         const {valid, regex, dot} = this.parseRegex(this.state.regex);
-        let diagram = null, resultContent = <div></div>, matches = [];
+        let diagram = null, matches = [];
         this.matchesPositions = [];
         if(valid && regex) {
-            diagram = this.state.regex.trim() !== "" ? <VizWrapper dot={dot}></VizWrapper> : <div/>; 
+            diagram = this.state.regex  !== "" ? <VizWrapper dot={dot}></VizWrapper> : <div/>; 
 
-            if (this.state.string.trim() !== "") {
+            if (this.state.string !== "") {
                 matches = regex.findAllMatches(this.state.string);
                 matches.forEach(x => this.matchesPositions.push([x.start, x.end])); 
             }
         } 
-        resultContent = <ResultComponent ref={this.resultComponent} matches={matches}></ResultComponent>;
-
-        const options = {
-            selectOnLineNumbers: true,
-            lineNumbers: 'off',
-            glyphMargin: false,
-            folding: false,
-            // Undocumented see https://github.com/Microsoft/vscode/issues/30795#issuecomment-410998882
-            lineDecorationsWidth: 0,
-            lineNumbersMinChars: 0,
-            minimap: {
-                enabled: false
-            },
-            scrollbar: {
-                vertical: "auto"
-            },
-            renderWhitespace: true,
-            wordWrap: true
-          };
 
         const editorDidMount = (editor, monaco) => {
-            monaco.editor.defineTheme('myTheme', {
-                base: 'vs',
-                inherit: true,
-                rules: [{ background: 'EDF9FA' }],
-                colors: {
-                    'editor.foreground': '#000000',
-                    'editor.background': '#f5fcfc',
-                    'editorCursor.foreground': '#8B0000',
-                    'editor.lineHighlightBackground': '#f5fcfc',
-                    'editorLineNumber.foreground': '#008800',
-                    'editor.selectionBackground': '#88000030',
-                    'editor.inactiveSelectionBackground': '#88000015'
-                }
-            });
-            monaco.editor.setTheme("myTheme"); 
+            defineAndSetTheme(monaco);
             this.editor = editor;
             this.monaco = monaco;
             this.editor.onDidChangeCursorPosition((x) => {
-                let i = 0;
-                for (const [start, end] of this.matchesPositions) {
-                    const s = this.editor.getModel().getPositionAt(start);
-                    const e = this.editor.getModel().getPositionAt(end);
-                    if (new this.monaco.Range(s.lineNumber, s.column, e.lineNumber, e.column).containsPosition(x.position)) {
-                        this.resultComponent.current.setGroup(i);
-                        this.highlightMatches(i);
-                    }
-                    i++;
-                }
+                const i = this.findClickedMatch(x);
+                this.selectMatch(i);
             })
           }
 
@@ -173,7 +149,7 @@ export default class MainPage extends React.Component {
 
         const result = <div class="resultSection">
             <h5 id="resultHeader">Result</h5>
-                {resultContent}
+                <ResultComponent ref={this.resultComponent} matches={matches}></ResultComponent>
             </div>;
         return <div id="page">
             <Navbar className="navBar" bg="dark" variant="dark">
@@ -198,22 +174,20 @@ export default class MainPage extends React.Component {
                         language="javascript"
                         theme="vs-light"
                         value={this.state.string} 
-                        options={options}
+                        options={MONACO_EDITOR_OPTIONS}
                         onChange={(x) => this.setState({string: x})}
                         editorDidMount={editorDidMount}
                     />
                     </div>
-                
                     {result}
                 </div> 
             </div>
             <div class="diagramContainer">
-            <div id="nfaHeader">
-            <h5 id="nfaLabel">NFA</h5>
-          </div>
-                    {diagram}
+                <div id="nfaHeader">
+                    <h5 id="nfaLabel">NFA</h5>
                 </div>
-            
+                {diagram}
+            </div>
         </div>
     }
 }

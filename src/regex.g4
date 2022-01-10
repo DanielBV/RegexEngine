@@ -7,11 +7,7 @@ regex: expr* alternative*;
 alternative: '|' expr*;
 
 expr: subexpr quantifier?;
-/* TODO: 
-    - Anchors (^and $)
-    - Non greedy (?)
-    - Range quantifier: ({1})
-*/
+
 subexpr: 
     regexGroup #groupPattern
     | atomicChar #atomicPattern

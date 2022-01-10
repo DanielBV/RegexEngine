@@ -27,6 +27,7 @@ function resetGroupNumbers() {
 function resetStateNumbers() {
     i = 0;
 }
+const EPSILON_MATCHER = new CharacterMatcher(EPSILON);
 
 const wordLambda = (char) => (char >= "a" && char <= "z") || (char >= "A" && char <= "Z") ||  (char >= "0" && char <= "9") || char === "_";
 const SINGLE_SPACE = [" ", "\f", "\n", "\r", "\t", "\v", "\u00a0", "\u1680", "\u2028","\u2029","\u202f", "\u205f", "\u3000", "\ufeff"];
@@ -44,10 +45,9 @@ function getClassMatcher(clazz) {
     //TODO this could be simplified just by making the negative match as literally the negation of the positive one. But I should be carefull with "weird"
     //cases like new line, epsilon, undefined, empty string, etc
     if (matcher.positive)
-        // The "\\+" is because when the label is translated to dot it isn't escaped.... I guess it would be easier to just escape it there. TODO
-        return new PositiveMatcher(matcher.lambda, "\\"+clazz);
+        return new PositiveMatcher(matcher.lambda, clazz);
     else 
-        return new NegatedMatcher(matcher.lambda, "\\"+clazz);
+        return new NegatedMatcher(matcher.lambda, clazz);
 }
 
 export class ConversionBuilder {
@@ -92,7 +92,7 @@ export class ConversionBuilder {
             else if (c.child instanceof CaretAnchor)
                 baseBuilder = () => this._oneStepNFA(new StartOfInputMatcher());
     
-            // Lazy to avoid creating unnecessary groups.
+            // Lazy to avoid creating unnecessary groups, since newGroup upgrades an internal counter
             const groupBuilder = () => namedGroup ? namedGroup : newGroup();
     
             /* This is a minor detail to make sure the states name don't skip any name 
@@ -117,9 +117,9 @@ export class ConversionBuilder {
             } else if (c.quantifier === OPTIONAL || c.quantifier === LAZY_OPTIONAL) {
                 base = baseBuilder(baseIsCapturing ? groupBuilder() : null);
                 if (c.quantifier === LAZY_OPTIONAL)
-                    base.unshiftTransition(base.initialState, base.endingStates[0], new CharacterMatcher(EPSILON));
+                    base.unshiftTransition(base.initialState, base.endingStates[0], EPSILON_MATCHER);
                 else 
-                    base.addTransition(base.initialState, base.endingStates[0], new CharacterMatcher(EPSILON));
+                    base.addTransition(base.initialState, base.endingStates[0], EPSILON_MATCHER);
             } else {
                 base = baseBuilder(baseIsCapturing ? groupBuilder() : null);
             }
@@ -142,15 +142,15 @@ export class ConversionBuilder {
         // - If base.endingStates[0] -> base.initialState goes first, it's greedy 
         // - If base.endingStates[0] -> newEnd goes first, it's non greedy
         if (lazy) {
-            base.addTransition(newInit, newEnd, new CharacterMatcher(EPSILON));
-            base.addTransition(newInit, base.initialState, new CharacterMatcher(EPSILON));
-            base.addTransition(base.endingStates[0], newEnd, new CharacterMatcher(EPSILON));
-            base.addTransition(base.endingStates[0], base.initialState, new CharacterMatcher(EPSILON));
+            base.addTransition(newInit, newEnd, EPSILON_MATCHER);
+            base.addTransition(newInit, base.initialState, EPSILON_MATCHER);
+            base.addTransition(base.endingStates[0], newEnd, EPSILON_MATCHER);
+            base.addTransition(base.endingStates[0], base.initialState, EPSILON_MATCHER);
         } else {
-            base.addTransition(newInit, base.initialState, new CharacterMatcher(EPSILON));
-            base.addTransition(base.endingStates[0], base.initialState, new CharacterMatcher(EPSILON));
-            base.addTransition(base.endingStates[0], newEnd, new CharacterMatcher(EPSILON));
-            base.addTransition(newInit, newEnd, new CharacterMatcher(EPSILON));
+            base.addTransition(newInit, base.initialState, EPSILON_MATCHER);
+            base.addTransition(base.endingStates[0], base.initialState, EPSILON_MATCHER);
+            base.addTransition(base.endingStates[0], newEnd, EPSILON_MATCHER);
+            base.addTransition(newInit, newEnd, EPSILON_MATCHER);
         }
       
         base.setInitialState(newInit);
@@ -208,7 +208,7 @@ export class ConversionBuilder {
         }
         const end = newState();
         nfa.addState(end);
-        endingStates.forEach(x => nfa.addTransition(x, end, new CharacterMatcher(EPSILON)));
+        endingStates.forEach(x => nfa.addTransition(x, end, EPSILON_MATCHER));
         nfa.setEndingStates([end]);
         if (capturingGroupNumber !== null && nfa.allowsCapturingGroups()) nfa.addGroup(start, end, capturingGroupNumber);
         return nfa;

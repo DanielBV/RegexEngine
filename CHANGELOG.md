@@ -1,5 +1,10 @@
 
 # Changelog
+## 1.3.3
+* Removed trim() in non-empty check for regex and text input. This way `    ` is considered a valid regex.
+* The result label is no longer sticky
+* Small refactors and cleaning
+
 ## 1.3.2 
 * Fixed bug with `findAllMatches` when the regex was fully lazy. For example `.*?`.
     Since the regex didn't consume any token, the input didn't progressed and the program was stuck in an eternal loop.

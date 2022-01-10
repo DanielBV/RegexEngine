@@ -23,9 +23,7 @@ export class CharacterMatcher extends Matcher{
 
     get label() {
         return this.c === EPSILON ? "ε" :
-        this.c === " " ? "space" :
-        this.c === "." ? "\\\\." :
-        this.c === "\\" ? "\\\\" : this.c;
+        this.c === "." ? "\\." : this.c;
     }
 }
 
@@ -369,11 +367,10 @@ export class CapturingNFT extends NFA{
      * @returns 
      */
     recursiveCompute(remainingString, currentState, memory, i) {
-        //TODO ------------------- ESTO CREO QUE LO HE ROTO AL PONER I!=0 EN EL NO RECURSIVO :(
         this.computeGroups(currentState, memory, i);
-         //TODO no tengo muy claro si esto dara problemas si justo el último estado acaba un grupo
         if (this.endingStates.includes(currentState.name)) {
-            // The closure can't be used here because then it wouldn't compute the groups of the final state. And computing the groups of all epsilon transitions
+            // The closure can't be used here because then it wouldn't compute the groups of the final state. 
+            // And computing the groups of all epsilon transitions
             // could lead to invalid results
             memory.success = this.endingStates.includes(currentState.name);
             memory.endingPosition = i;
@@ -381,7 +378,6 @@ export class CapturingNFT extends NFA{
         }
 
         const input = remainingString[0];
-        // Since it takes into account all the closure at the same time it doesn't have the problem of epsilon loops
         for (const [matcher, toState] of currentState.transitions) {
             if (matcher.matches(input, i)) { // Non-epsilon
                 const copyMemory = JSON.parse(JSON.stringify(memory));
@@ -391,23 +387,9 @@ export class CapturingNFT extends NFA{
                 if (niceTry.success) return niceTry;
                 if (DEBUG) console.log(`Backtracked to state ${currentState.name}`);
             } else if (matcher.matches(EPSILON, i)) {
-                    // If you are going to a state that has already been visited in an epsilon transition, you might be in a loop. So don't follow it again
+                // If you are going to a state that has already been visited in an epsilon transition, you might be in a 
+                // loop. So don't follow it again. It's possible to create an epsilon loop with (|)*
                 if (!memory.EPSILON_VISITED.includes(toState.name)) {
-                    if (remainingString.length === 0 && this.endingStates.includes(currentState.name)) {
-                        // TODO este comment está un poco deprecado. Ahora la i es para detectar el primer caracter de la cadena ORIGINAL (que puede no ser
-                        // la cadena que se está computando)
-                        // This is a shortcut to avoid unnecesary backtracking. I need to find a way to make this code more clear.
-                        // Example: 
-                        //      - Starting state: q0
-                        //      - Final state: q1
-                        //      - States: q0, q1, q2, q3. 
-                        //      - They all have a single epsilon transition to the next one: q0 ɛ-> q1, q1 ɛ-> q2 q2ɛ->q3 
-                        // If I just added the remainingString check at the end of this loop without this check, then the algorithm would go to q3. It couldn't 
-                        // continue and it isn't the final state, so it backtracks to q2. There are no more transitions and it isn't a final state either, so it
-                        // backtrackts to q1. Which doesn't have transitions but... surprise it is the final state.
-                        memory.success = true;
-                        return memory;
-                    }
                     const copyMemory = JSON.parse(JSON.stringify(memory));
                     copyMemory.EPSILON_VISITED.push(currentState.name);
                     // It's an epsilon transition so the string doesn't change and 'i' isn't updated
