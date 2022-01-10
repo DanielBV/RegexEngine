@@ -1,5 +1,11 @@
 
 # Changelog
+## 1.3.4
+* Fixed bug with `findAllMatches` with zero or more quantifier. The algorithm paused if it succeded but the cursor didn't move to avoid 
+getting stuck in infinite loops with lazy patterns (`(a*?)`, see v1.3.2) but it didn't take into account that for the pattern `a*`
+and a string `aba`, it matched the first `a`, then it matches in between `a` and `b` without moving the cursor. Now if the cursor doesn't move
+it automatically moves to the next position. And the engine only returns matchers of at least one character.
+
 ## 1.3.3
 * Removed trim() in non-empty check for regex and text input. This way `    ` is considered a valid regex.
 * The result label is no longer sticky

@@ -40,7 +40,11 @@ export class NFARegex {
     findFirstMatch(string) {
         for (let i = 0;  i < string.length; i++) {
             const r = this.nfa.compute(string.substring(i), i);
-            if (r.success) return Match.fromNFAResult(string, i, r);
+            if (r.success) {
+                const match =  Match.fromNFAResult(string, i, r);
+                if (match.start !== match.end) 
+                    return match;
+            }
         }
         return null;
     }
@@ -53,9 +57,12 @@ export class NFARegex {
         for (let i = 0;  i < string.length; i++) {
            const r = this.nfa.compute(string.substring(i), i);
            if (r.success) {
-               matches.push(Match.fromNFAResult(string, i, r));
-               if (r.endingPosition === i) break; // This can happen with lazy regex like '.*?'. If they arent stop they'll loop forever
-               i = r.endingPosition - 1; // - 1 because when the loop ends it sums 1
+               const match = Match.fromNFAResult(string, i, r);
+               // This can be false when it matches "nothing", like with optional parameters
+               if (match.start !== match.end) {
+                   matches.push(match);
+                   if (r.endingPosition !== i)i = r.endingPosition - 1; 
+               }
            }
         }
         return matches;
