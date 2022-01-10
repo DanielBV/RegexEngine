@@ -1,6 +1,8 @@
 import { AtomicPattern, CaretAnchor, CharacterClass, ComplexClass, DollarAnchor, DotPattern, Regex, RegexAlternative } from "../grammar/ast";
 import { ASTERISK, LAZY_ASTERISK, OPTIONAL, PLUS, LAZY_PLUS, LAZY_OPTIONAL } from "../grammar/astBuilder";
-import { CapturingNFT, CharacterMatcher, DotMatcher, EndOfInputMatcher, EPSILON, NegatedMatcher, NFA, PositiveMatcher, StartOfInputMatcher } from "./dfa";
+import { EngineNFA, EPSILON } from "./nfa";
+import {CharacterMatcher, DotMatcher, EndOfInputMatcher, NegatedMatcher, PositiveMatcher, StartOfInputMatcher} from './matchers';
+
 
 let i = 0;
 function newState() {
@@ -27,6 +29,7 @@ function resetGroupNumbers() {
 function resetStateNumbers() {
     i = 0;
 }
+const EPSILON_MATCHER = new CharacterMatcher(EPSILON);
 
 const wordLambda = (char) => (char >= "a" && char <= "z") || (char >= "A" && char <= "Z") ||  (char >= "0" && char <= "9") || char === "_";
 const SINGLE_SPACE = [" ", "\f", "\n", "\r", "\t", "\v", "\u00a0", "\u1680", "\u2028","\u2029","\u202f", "\u205f", "\u3000", "\ufeff"];
@@ -44,10 +47,9 @@ function getClassMatcher(clazz) {
     //TODO this could be simplified just by making the negative match as literally the negation of the positive one. But I should be carefull with "weird"
     //cases like new line, epsilon, undefined, empty string, etc
     if (matcher.positive)
-        // The "\\+" is because when the label is translated to dot it isn't escaped.... I guess it would be easier to just escape it there. TODO
-        return new PositiveMatcher(matcher.lambda, "\\"+clazz);
+        return new PositiveMatcher(matcher.lambda, clazz);
     else 
-        return new NegatedMatcher(matcher.lambda, "\\"+clazz);
+        return new NegatedMatcher(matcher.lambda, clazz);
 }
 
 export class ConversionBuilder {
@@ -92,13 +94,13 @@ export class ConversionBuilder {
             else if (c.child instanceof CaretAnchor)
                 baseBuilder = () => this._oneStepNFA(new StartOfInputMatcher());
     
-            // Lazy to avoid creating unnecessary groups.
+            // Lazy to avoid creating unnecessary groups, since newGroup upgrades an internal counter
             const groupBuilder = () => namedGroup ? namedGroup : newGroup();
     
             /* This is a minor detail to make sure the states name don't skip any name 
                 Doing it shouldn't have any effect on the final result, but it generates a prettier diagram.
                 The basics of this is: 
-                - CapturingNFT.thompsonAppend allows the unionState and the otherNFA.initialState to have the same 
+                - EngineNFA.thompsonAppend allows the unionState and the otherNFA.initialState to have the same 
                     - Whether it has the same name or not, the state 'otherNFA.initialState' is deleted. The difference is that if 
                     they have a differen't names there will be a gap in the names
                 - But because the nfa pieces are build independently, the names will never coincide. To force it to coincide we can 
@@ -112,14 +114,14 @@ export class ConversionBuilder {
             } else if (c.quantifier === PLUS || c.quantifier === LAZY_PLUS) {
                 const group = baseIsCapturing ? groupBuilder() : null;
                 base = baseBuilder(group);
-                const extraPart = this._asterisk(() => CapturingNFT.clone(base, () => newState()), c.quantifier === LAZY_PLUS);
+                const extraPart = this._asterisk(() => EngineNFA.clone(base, () => newState()), c.quantifier === LAZY_PLUS);
                 base.thompsonAppendNFA(extraPart, base.endingStates[0]);
             } else if (c.quantifier === OPTIONAL || c.quantifier === LAZY_OPTIONAL) {
                 base = baseBuilder(baseIsCapturing ? groupBuilder() : null);
                 if (c.quantifier === LAZY_OPTIONAL)
-                    base.unshiftTransition(base.initialState, base.endingStates[0], new CharacterMatcher(EPSILON));
+                    base.unshiftTransition(base.initialState, base.endingStates[0], EPSILON_MATCHER);
                 else 
-                    base.addTransition(base.initialState, base.endingStates[0], new CharacterMatcher(EPSILON));
+                    base.addTransition(base.initialState, base.endingStates[0], EPSILON_MATCHER);
             } else {
                 base = baseBuilder(baseIsCapturing ? groupBuilder() : null);
             }
@@ -128,7 +130,7 @@ export class ConversionBuilder {
             else 
                 nfa.thompsonAppendNFA(base, nfa.endingStates[0]);
         }
-        if (capturingGroupNumber !== null && nfa.allowsCapturingGroups()) nfa.addGroup(nfa.initialState, nfa.endingStates[0], capturingGroupNumber); 
+        if (capturingGroupNumber !== null) nfa.addGroup(nfa.initialState, nfa.endingStates[0], capturingGroupNumber); 
         return nfa;
     }
 
@@ -142,15 +144,15 @@ export class ConversionBuilder {
         // - If base.endingStates[0] -> base.initialState goes first, it's greedy 
         // - If base.endingStates[0] -> newEnd goes first, it's non greedy
         if (lazy) {
-            base.addTransition(newInit, newEnd, new CharacterMatcher(EPSILON));
-            base.addTransition(newInit, base.initialState, new CharacterMatcher(EPSILON));
-            base.addTransition(base.endingStates[0], newEnd, new CharacterMatcher(EPSILON));
-            base.addTransition(base.endingStates[0], base.initialState, new CharacterMatcher(EPSILON));
+            base.addTransition(newInit, newEnd, EPSILON_MATCHER);
+            base.addTransition(newInit, base.initialState, EPSILON_MATCHER);
+            base.addTransition(base.endingStates[0], newEnd, EPSILON_MATCHER);
+            base.addTransition(base.endingStates[0], base.initialState, EPSILON_MATCHER);
         } else {
-            base.addTransition(newInit, base.initialState, new CharacterMatcher(EPSILON));
-            base.addTransition(base.endingStates[0], base.initialState, new CharacterMatcher(EPSILON));
-            base.addTransition(base.endingStates[0], newEnd, new CharacterMatcher(EPSILON));
-            base.addTransition(newInit, newEnd, new CharacterMatcher(EPSILON));
+            base.addTransition(newInit, base.initialState, EPSILON_MATCHER);
+            base.addTransition(base.endingStates[0], base.initialState, EPSILON_MATCHER);
+            base.addTransition(base.endingStates[0], newEnd, EPSILON_MATCHER);
+            base.addTransition(newInit, newEnd, EPSILON_MATCHER);
         }
       
         base.setInitialState(newInit);
@@ -208,9 +210,9 @@ export class ConversionBuilder {
         }
         const end = newState();
         nfa.addState(end);
-        endingStates.forEach(x => nfa.addTransition(x, end, new CharacterMatcher(EPSILON)));
+        endingStates.forEach(x => nfa.addTransition(x, end, EPSILON_MATCHER));
         nfa.setEndingStates([end]);
-        if (capturingGroupNumber !== null && nfa.allowsCapturingGroups()) nfa.addGroup(start, end, capturingGroupNumber);
+        if (capturingGroupNumber !== null) nfa.addGroup(start, end, capturingGroupNumber);
         return nfa;
     }
 }

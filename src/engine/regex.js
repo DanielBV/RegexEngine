@@ -1,6 +1,6 @@
 import parseRegex from "../grammar/parser";
 import { ConversionBuilder } from "./conversions";
-import { CapturingNFT } from "./dfa";
+import { EngineNFA } from "./nfa";
 
 
 export class Match {
@@ -33,7 +33,7 @@ export class NFARegex {
     constructor (regex) {
         this.source = regex;
         const ast = parseRegex(regex);
-        const cb = new ConversionBuilder( () => new CapturingNFT());
+        const cb = new ConversionBuilder( () => new EngineNFA());
         this.nfa = cb.regexToNFA(ast);
     }
 

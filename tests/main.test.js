@@ -1,6 +1,6 @@
 
 import { ConversionBuilder } from '../src/engine/conversions';
-import { CapturingNFT } from '../src/engine/dfa';
+import { EngineNFA } from '../src/engine/nfa';
 import { NFARegex } from '../src/engine/regex';
 import parseRegex from '../src/grammar/parser';
 
@@ -15,7 +15,7 @@ class AlgorithmWrapper {
 }
 class NFTWrapper extends AlgorithmWrapper {
   getBuilder() {
-    return new ConversionBuilder(() => new CapturingNFT())
+    return new ConversionBuilder(() => new EngineNFA())
   }
 
   hasMatched(computedResult) {
@@ -89,6 +89,7 @@ describe('test basic regex', () => {
     ["^a", "ab", true],
     ["a$", "ba", false],
     ["^a$", "ab", false],
+    ["a(|)*", "a", true], // An epsilon loop (a.k.a dangerous)
   ];
   for (const algorithm of ALGORITHMS) {
     for (const [regex, string, result] of CASES) {
@@ -195,8 +196,6 @@ describe('Test capture groups', () => {
     ["(.+?)(.+)", "abbb",  [{group:0, txt: "abbb"},{group: 1, txt: "a"}, {group:2, txt: "bbb"}]],
     ["(.+?)(.+?)(.+)", "abcc",  [{group:0, txt: "abcc"},{group: 1, txt: "a"}, {group:2, txt: "b"}, {group:3, txt: "cc"}]],
     ["a(b??)(b+)", "abb",  [{group:0, txt: "abb"},{group: 1, txt: ""}, {group:2, txt: "bb"}]],
-    //TODO When the algorithm is no longer a "match the whole string" instead of a ^regex$, then (a*?)(a*?) should have no matches
-    //Named groups:
     ["(?<name>a+)", "aaaa", [{group:0, txt: "aaaa"},{group: "name", txt: "aaaa"}]],
     ["(?<name>a+)(?<name>b+)", "aabb", [{group:0, txt: "aabb"},{group: "name", txt: "bb"}]],
     //Non capturing group

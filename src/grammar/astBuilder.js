@@ -1,6 +1,6 @@
 import RegexVisitor from './generated/regexVisitor';
 import {Regex, Expression, AtomicPattern, RegexAlternative, DotPattern, CharacterClass, ComplexClass, DollarAnchor, CaretAnchor} from './ast';
-import { EPSILON } from '../engine/dfa';
+import { EPSILON } from '../engine/nfa';
 
 
 export const ASTERISK = Symbol("*");

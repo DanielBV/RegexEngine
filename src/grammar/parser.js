@@ -1,6 +1,6 @@
 
 import antlr4 from 'antlr4';
-import { DefaultErrorStrategy, ErrorListener } from 'antlr4/src/antlr4/error';
+import { ErrorListener } from 'antlr4/src/antlr4/error';
 import { AstBuilder } from './astBuilder';
 import RegexLexer from './generated/regexLexer';
 import RegexParser from './generated/regexParser';
@@ -8,7 +8,7 @@ import RegexParser from './generated/regexParser';
 class CustomErrorListener extends ErrorListener {
     syntaxError(recognizer, offendingSymbol, line, column, msg, e) {
         console.log(msg);
-        throw Error();
+        throw Error(msg);
     }
 }
 export default function parseRegex(regex) {
