@@ -152,3 +152,14 @@ body, #page, #root{
 .groupText {
     font-size: 15px;
 }
+
+#animationHeader{
+    display: flex;
+    gap: 10px;
+}
+
+.center{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}

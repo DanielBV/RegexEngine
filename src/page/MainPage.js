@@ -1,5 +1,5 @@
 import React from "react";
-import nfaToDot from "./visualization/nfaToDot";
+import {nfaToDot} from "./visualization/nfaToDot";
 import { VizWrapper } from "./visualization/vizwrapper";
 import Navbar from 'react-bootstrap/Navbar'
 import Nav from 'react-bootstrap/Nav'
@@ -154,6 +154,9 @@ export default class MainPage extends React.Component {
         return <div id="page">
             <Navbar className="navBar" bg="dark" variant="dark">
                 <Navbar.Brand className="logo">Regex Engine {<div class="versionLabel">{process.env.VERSION}</div>}</Navbar.Brand>
+                <Nav>
+                <Nav.Link href="/animation.html">Animation</Nav.Link>
+                </Nav>
                 <Nav className="me-auto">
                 <Nav.Link href="https://github.com/DanielBV/RegexEngine">Github</Nav.Link>
                 </Nav>

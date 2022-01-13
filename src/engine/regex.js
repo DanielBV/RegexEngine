@@ -55,7 +55,7 @@ export class NFARegex {
     findAllMatches(string) {
         const matches = [];
         for (let i = 0;  i < string.length; i++) {
-           const r = this.nfa.compute(string.substring(i), i);
+           const r = this.nfa.iterativeCompute(string.substring(i), i);
            if (r.success) {
                const match = Match.fromNFAResult(string, i, r);
                // This can be false when it matches "nothing", like with optional parameters

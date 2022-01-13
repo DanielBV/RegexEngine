@@ -1,5 +1,8 @@
 
 # Changelog
+# 1.4.0
+* Added the animation page (it was programmed kind of quickly so it still needs some cleaning)
+
 ## 1.3.4
 * Fixed bug with `findAllMatches` with zero or more quantifier. The algorithm paused if it succeded but the cursor didn't move to avoid 
 getting stuck in infinite loops with lazy patterns (`(a*?)`, see v1.3.2) but it didn't take into account that for the pattern `a*`

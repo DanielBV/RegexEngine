@@ -28,6 +28,9 @@ npm run test
 ## About the page
 This project includes a page to test and visualize the regex. 
 ![Regex engine page](./img/page.png)
+It also has an animation page (`/animation.html`) to visualize the NFA in action.
+![Regex engine working animation](./img/animation.gif)
+
 
 ### Built with
 * React

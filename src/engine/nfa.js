@@ -67,18 +67,18 @@ export class EngineNFA {
     compute(string, i=0) {
         if (DEBUG) console.log("----------------------------------------------------------------------------------------" + i);
         if (DEBUG) console.log(this);
-        return this.recursiveCompute(string, this.states[this.initialState], {ACTIVE_STATES: {}, GROUP_MATCHES:{}, EPSILON_VISITED: []},i);
+        return this.recursiveCompute(string, this.states[this.initialState], {ACTIVE_GROUPS: {}, GROUP_MATCHES:{}, EPSILON_VISITED: []},i);
 
     }
 
     computeGroups(currentState, memory, i) {
         for (const group of currentState.startsGroups) {
             if (DEBUG) console.log(`Entered group ${group} in state ${currentState.name}. i=${i}`);
-            memory.ACTIVE_STATES[group] = i; // i = starting position of a group 
+            memory.ACTIVE_GROUPS[group] = i; // i = starting position of a group 
         }
         for (const group of currentState.endsGroups) {
             if (DEBUG) console.log(`Exited group ${group} in state ${currentState.name}. i=${i}`);
-            memory.GROUP_MATCHES[group] = [group, memory.ACTIVE_STATES[group], i];
+            memory.GROUP_MATCHES[group] = [group, memory.ACTIVE_GROUPS[group], i];
         }
     }
 
@@ -180,6 +180,162 @@ export class EngineNFA {
        
         memory.success = this.endingStates.includes(currentState.name);
         memory.endingPosition = i;
+        return memory;
+    }
+
+    firstIterativeStep(string, sourcePos) {
+        const stack = [];
+        stack.push({string, nextTransition:0, i: sourcePos, sourceState: null, currentState:  this.states[this.initialState], memory: {success: false, ACTIVE_GROUPS: {}, GROUP_MATCHES:{}, EPSILON_VISITED: []}})
+        return stack;
+    }
+
+    animationStepAlgorithm(remainingStack) {
+        const stack = [...remainingStack];
+        if (stack.length === 0)
+            return null;
+
+        const current = stack.pop();
+        const currentState = current.currentState;
+        const remainingString = current.string;
+        const memory = current.memory;
+        const sourceState = current.sourceState;
+        const i = current.i;
+        const nextTransition = current.nextTransition;
+        this.computeGroups(currentState, memory, i);
+        console.log("CURRENT STATE: " + currentState.name)
+        if (this.endingStates.includes(currentState.name)) {
+            // The closure can't be used here because then it wouldn't compute the groups of the final state. 
+            // And computing the groups of all epsilon transitions
+            // could lead to invalid results
+            memory.success = this.endingStates.includes(currentState.name);
+            memory.endingPosition = i;
+            return {stack, backtrack: false, memory, currentState, sourceState, pos:i};
+        }
+
+        const input = remainingString[0];
+        let backtracked = true;
+        for (let c = nextTransition; c < currentState.transitions.length; c++) {
+            const [matcher, toState] = currentState.transitions[c];
+            if (matcher.matches(input, i)) { // Non-epsilon
+                backtracked = false;
+                stack.push({...current, nextTransition: c + 1}) // To backtrack if it fails
+                const copyMemory = JSON.parse(JSON.stringify(memory));
+                copyMemory.EPSILON_VISITED = [];
+                if (DEBUG) console.log(`Added to stack ${currentState.name} -> ${toState.name} with input ${input}`);
+                stack.push({string: remainingString.substring(1), nextTransition:0,  i: i+1, currentState: toState, memory: copyMemory, sourceState: currentState.name});
+                return {stack, memory: copyMemory, backtrack: nextTransition !== 0, currentState, pos: i};
+            } else if (matcher.matches(EPSILON, i)) {
+                // If you are going to a state that has already been visited in an epsilon transition, you might be in a 
+                // loop. So don't follow it again. It's possible to create an epsilon loop with (|)*
+                if (!memory.EPSILON_VISITED.includes(toState.name)) {
+                    backtracked = false;
+                    stack.push({...current, nextTransition: c + 1}) // To backtrack if it fails
+                    const copyMemory = JSON.parse(JSON.stringify(memory));
+                    copyMemory.EPSILON_VISITED.push(currentState.name);
+                    // It's an epsilon transition so the string doesn't change and 'i' isn't updated
+                    if (DEBUG) console.log(`Added to stack ${currentState.name} -> ${toState.name} with input EPSILON`);
+                    stack.push({string: remainingString, i: i, nextTransition:0, currentState: toState, memory: copyMemory, sourceState: currentState.name});
+                    return {stack,memory: copyMemory, backtrack:  nextTransition !== 0,  currentState, pos: i};
+                } 
+            }
+        }
+
+        return  {stack, backtrack: true, memory, currentState, backtracked, sourceState, pos: i};
+    }
+
+    iterativeStep(remainingStack) {
+        const stack = [...remainingStack];
+        if (stack.length === 0)
+            return null;
+
+        const current = stack.pop();
+        const currentState = current.currentState;
+        const remainingString = current.string;
+        const memory = current.memory;
+        const sourceState = current.sourceState;
+        const i = current.i;
+        this.computeGroups(currentState, memory, i);
+        console.log("CURRENT STATE: " + currentState.name)
+        if (this.endingStates.includes(currentState.name)) {
+            // The closure can't be used here because then it wouldn't compute the groups of the final state. 
+            // And computing the groups of all epsilon transitions
+            // could lead to invalid results
+            memory.success = this.endingStates.includes(currentState.name);
+            memory.endingPosition = i;
+            return {stack, finished: true, memory, currentState, sourceState, pos:i};
+        }
+
+        const input = remainingString[0];
+        let backtracked = true;
+        for (let c = currentState.transitions.length-1; c >= 0; c--) {
+            const [matcher, toState] = currentState.transitions[c];
+            if (matcher.matches(input, i)) { // Non-epsilon
+                backtracked = false;
+                const copyMemory = JSON.parse(JSON.stringify(memory));
+                copyMemory.EPSILON_VISITED = [];
+                if (DEBUG) console.log(`Added to stack ${currentState.name} -> ${toState.name} with input ${input}`);
+                stack.push({string: remainingString.substring(1), i: i+1, currentState: toState, memory: copyMemory, sourceState: currentState.name});
+            } else if (matcher.matches(EPSILON, i)) {
+                // If you are going to a state that has already been visited in an epsilon transition, you might be in a 
+                // loop. So don't follow it again. It's possible to create an epsilon loop with (|)*
+                if (!memory.EPSILON_VISITED.includes(toState.name)) {
+                    backtracked = false;
+                    const copyMemory = JSON.parse(JSON.stringify(memory));
+                    copyMemory.EPSILON_VISITED.push(currentState.name);
+                    // It's an epsilon transition so the string doesn't change and 'i' isn't updated
+                    if (DEBUG) console.log(`Added to stack ${currentState.name} -> ${toState.name} with input EPSILON`);
+                    stack.push({string: remainingString, i: i, currentState: toState, memory: copyMemory, sourceState: currentState.name});
+                } 
+            }
+        }
+
+        return  {stack, finished: false, memory, currentState, backtracked, sourceState, pos: i};
+    }
+
+    iterativeCompute(string, sourcePos) {
+        const stack = [];
+        stack.push({string, i: sourcePos, currentState:  this.states[this.initialState], memory: {ACTIVE_GROUPS: {}, GROUP_MATCHES:{}, EPSILON_VISITED: []}})
+
+        while (stack.length) {
+            const current = stack.pop();
+            const currentState = current.currentState;
+            const remainingString = current.string;
+            const memory = current.memory;
+            const i = current.i;
+            this.computeGroups(currentState, memory, i);
+            if (this.endingStates.includes(currentState.name)) {
+                // The closure can't be used here because then it wouldn't compute the groups of the final state. 
+                // And computing the groups of all epsilon transitions
+                // could lead to invalid results
+                memory.success = this.endingStates.includes(currentState.name);
+                memory.endingPosition = i;
+                return memory;
+            }
+    
+            const input = remainingString[0];
+            for (let c = currentState.transitions.length-1; c >= 0; c--) {
+                const [matcher, toState] = currentState.transitions[c];
+                if (matcher.matches(input, i)) { // Non-epsilon
+                    const copyMemory = JSON.parse(JSON.stringify(memory));
+                    copyMemory.EPSILON_VISITED = [];
+                    if (DEBUG) console.log(`Added to stack ${currentState.name} -> ${toState.name} with input ${input}`);
+                    stack.push({string: remainingString.substring(1), i: i+1, currentState: toState, memory: copyMemory});
+                } else if (matcher.matches(EPSILON, i)) {
+                    // If you are going to a state that has already been visited in an epsilon transition, you might be in a 
+                    // loop. So don't follow it again. It's possible to create an epsilon loop with (|)*
+                    if (!memory.EPSILON_VISITED.includes(toState.name)) {
+                        const copyMemory = JSON.parse(JSON.stringify(memory));
+                        copyMemory.EPSILON_VISITED.push(currentState.name);
+                        // It's an epsilon transition so the string doesn't change and 'i' isn't updated
+                        if (DEBUG) console.log(`Added to stack ${currentState.name} -> ${toState.name} with input EPSILON`);
+                        stack.push({string: remainingString, i: i, currentState: toState, memory: copyMemory});
+                    } 
+                }
+            }
+        }
+        const memory = {}; //TODO Pulir esto
+        memory.success = false;
+        memory.endingPosition = sourcePos+string.length; //TODO testrear esto
         return memory;
     }
 

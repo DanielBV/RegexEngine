@@ -5,9 +5,12 @@ const webpack = require('webpack');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 module.exports = {
     mode: 'production',
-   entry: path.join(__dirname, "/src/index.js"),
+   entry: {
+       page1: path.join(__dirname, "/src/index.js"),
+       page2: path.join(__dirname, "/src/animation.js"),
+   },
    output: {
-       filename: "build.js",
+        filename: "[name]/build.js",
        path: path.join(__dirname, "/docs")}, //docs instead of dist for github pages
    module:{
        rules:[{
@@ -23,7 +26,14 @@ module.exports = {
    },
    plugins:[
         new HtmlWebpackPlugin({
-        template: './src/index.html'
+        template: './src/index.html',
+        filename: 'index.html',
+        chunks: ['page1']
+      }),
+      new HtmlWebpackPlugin({
+        template: './src/animation.html',
+        filename: 'animation.html',
+        chunks: ['page2']
       }),
       new CleanWebpackPlugin(),
       new MiniCssExtractPlugin({      filename: "[name].[contenthash].css",    }),
