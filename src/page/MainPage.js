@@ -155,7 +155,7 @@ export default class MainPage extends React.Component {
             <Navbar className="navBar" bg="dark" variant="dark">
                 <Navbar.Brand className="logo">Regex Engine {<div class="versionLabel">{process.env.VERSION}</div>}</Navbar.Brand>
                 <Nav>
-                <Nav.Link href="/animation.html">Animation</Nav.Link>
+                <Nav.Link href="./animation.html">Animation</Nav.Link>
                 </Nav>
                 <Nav className="me-auto">
                 <Nav.Link href="https://github.com/DanielBV/RegexEngine">Github</Nav.Link>
