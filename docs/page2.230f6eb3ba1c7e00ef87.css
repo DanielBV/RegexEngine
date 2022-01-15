@@ -2542,3 +2542,8 @@ body, #page, #root{
     justify-content: center;
     align-items: center;
 }
+
+.animationWarning{
+    color: #6c757d;
+    font-size: 13px;
+}
