@@ -45,7 +45,6 @@ export function prettifyLoop(loop) {
     let absolutePositionInNewLoop = 0;
     for (let i = 0; i < loop.length; i++) {
         const step = loop[i];
-        console.log(`i: ${i}. Length: ${loop.length}`)
         if (step.isBacktracking) {
             let plusOne = false;
             if (lastNonBacktrack !== 0 && lastNonBacktrack === i-1 ) { // An intermediate node to soften the animation
@@ -56,7 +55,6 @@ export function prettifyLoop(loop) {
             newLoop.push({state: step.state, type: lastNonBacktrack === i-1 ? "startBacktrack"  : "backtrack", pos: step.pos, groups: step.groups});
             if (i === loop.length - 1 ){
                 newLoop.splice(lastNonBacktrack + 2); /** +2 because of the intermediate 'advance' state */
-                console.log(newLoop);
                 newLoop[newLoop.length-1].type = "totalFailure";
             }
         } else if (step.success) {

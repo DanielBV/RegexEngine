@@ -1,6 +1,7 @@
 import { EngineNFA, EPSILON } from "../src/engine/nfa";
 import { CharacterMatcher } from "../src/engine/matchers";
 
+
 describe('nfa - append', () => {
     test('basic works', () => {
         const nfa1 = new EngineNFA();

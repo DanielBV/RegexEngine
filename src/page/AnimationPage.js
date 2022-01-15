@@ -11,7 +11,6 @@ import { NFARegex } from "../engine/regex";
 import { defineAndSetTheme, MONACO_EDITOR_OPTIONS } from "./visualization/utils";
 import Button from 'react-bootstrap/Button'
 import { generateAnimation } from "./loop";
-import ToggleButton from 'react-bootstrap/ToggleButton'
 
 export default class AnimationPage extends React.Component {
     constructor() {
@@ -66,17 +65,18 @@ export default class AnimationPage extends React.Component {
             return {valid: true, regex: _regex};
         } catch (e) {
             console.error(e);
-            return {valid: regex === ""};
+            return {valid: false};
         }
     }
     
     render() {
-        let diagram = null, matches = [];
-        const valid = true;
+        let diagram = null;
         const i = this.state.i;
-        const dot = this.state.regex && this.state.regex.nfa ? animatedNFAToDot(this.state.regex.nfa, this.state.loop[i].state, this.state.loop[i].type) : null;
-        this.matchesPositions = [];
-        diagram = this.state.regex  !== "" ? <VizWrapper dot={dot}></VizWrapper> : <div/>; 
+        if (this.state.regex && this.state.regex.nfa) {
+            const dot = this.state.regex && this.state.regex.nfa 
+                ? animatedNFAToDot(this.state.regex.nfa, this.state.loop[i].state, this.state.loop[i].type) : null;
+            diagram = this.state.regex  !== "" ? <VizWrapper dot={dot}></VizWrapper> : <div/>; 
+        }
 
         const editorDidMount = (editor, monaco) => {
             defineAndSetTheme(monaco);
@@ -112,15 +112,16 @@ export default class AnimationPage extends React.Component {
                 </Nav>
             </Navbar>
             <div id="content">
+                <div class="animationWarning">This page only shows the animation for a single computation. This means the regex you write has an implicit ^ anchor. Methods like 'findFirstMatch' and 'findAllMatch' run multiple computations starting at different indexes.</div>
                         <InputGroup className="mb-3">
                 <div id="regexLabel">Regex:</div>
-                <FormControl isInvalid={!valid} className="regexInput"
+                <FormControl className="regexInput"
                 aria-label="Default"
                 aria-describedby="inputGroup-sizing-default"
                 value={this.state.regexSource}  placeholder="((a|b)+)"
                             onChange={(x) => {
                                 const {valid, regex} = this.parseRegex(x.target.value);
-                                if (!valid)
+                                if (!valid || x.target.value === "")
                                     this.setState({loop:[], i: 0, regex:null, regexSource: x.target.value});
                                 else {
                                     const loop = generateAnimation(regex, this.state.string);
@@ -137,9 +138,8 @@ export default class AnimationPage extends React.Component {
                         value={this.state.string} 
                         options={MONACO_EDITOR_OPTIONS}
                         onChange={(x) => {
-                            const loop = generateAnimation(this.state.regex, x);
-                            console.log(loop);
-                            this.setState({loop, i: 0, string: x});
+                                const loop = this.state.regex && this.state.regex.nfa ? generateAnimation(this.state.regex, x) : [];
+                                this.setState({loop, i: 0, string: x});
                         }}
                         editorDidMount={editorDidMount}
                     />

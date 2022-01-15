@@ -189,6 +189,20 @@ export class EngineNFA {
         return stack;
     }
 
+    /**
+     * A variation of the iterative algorihm that produces a nicer animation:
+     * - It only iterates a single step of the loop. 
+     * - It returns the stack after the step and multiple information about the step (technically it could be obtained from the stack but 
+     * its more convinient this way)
+     * - Unlike the regular iterative algorithm, this one doesn't push to the stack all of its transitions. Instead it records
+     * which transition a node has already tried to go through (nextTransition) and then it pushes itself (with nextTransition changed)
+     * and then it pushes the first transition that matches.
+     *   - The idea behind this is to force the algorithm to literally backtrack by retracing all the steps it previously walked through
+     *     (to make a smoother animation)
+     *  
+     * @param {*} remainingStack The first call to this algorithm should be with this.firstIterativeStep
+     * @returns 
+     */
     animationStepAlgorithm(remainingStack) {
         const stack = [...remainingStack];
         if (stack.length === 0)
@@ -202,11 +216,7 @@ export class EngineNFA {
         const i = current.i;
         const nextTransition = current.nextTransition;
         this.computeGroups(currentState, memory, i);
-        console.log("CURRENT STATE: " + currentState.name)
         if (this.endingStates.includes(currentState.name)) {
-            // The closure can't be used here because then it wouldn't compute the groups of the final state. 
-            // And computing the groups of all epsilon transitions
-            // could lead to invalid results
             memory.success = this.endingStates.includes(currentState.name);
             memory.endingPosition = i;
             return {stack, backtrack: false, memory, currentState, sourceState, pos:i};
@@ -241,55 +251,6 @@ export class EngineNFA {
         }
 
         return  {stack, backtrack: true, memory, currentState, backtracked, sourceState, pos: i};
-    }
-
-    iterativeStep(remainingStack) {
-        const stack = [...remainingStack];
-        if (stack.length === 0)
-            return null;
-
-        const current = stack.pop();
-        const currentState = current.currentState;
-        const remainingString = current.string;
-        const memory = current.memory;
-        const sourceState = current.sourceState;
-        const i = current.i;
-        this.computeGroups(currentState, memory, i);
-        console.log("CURRENT STATE: " + currentState.name)
-        if (this.endingStates.includes(currentState.name)) {
-            // The closure can't be used here because then it wouldn't compute the groups of the final state. 
-            // And computing the groups of all epsilon transitions
-            // could lead to invalid results
-            memory.success = this.endingStates.includes(currentState.name);
-            memory.endingPosition = i;
-            return {stack, finished: true, memory, currentState, sourceState, pos:i};
-        }
-
-        const input = remainingString[0];
-        let backtracked = true;
-        for (let c = currentState.transitions.length-1; c >= 0; c--) {
-            const [matcher, toState] = currentState.transitions[c];
-            if (matcher.matches(input, i)) { // Non-epsilon
-                backtracked = false;
-                const copyMemory = JSON.parse(JSON.stringify(memory));
-                copyMemory.EPSILON_VISITED = [];
-                if (DEBUG) console.log(`Added to stack ${currentState.name} -> ${toState.name} with input ${input}`);
-                stack.push({string: remainingString.substring(1), i: i+1, currentState: toState, memory: copyMemory, sourceState: currentState.name});
-            } else if (matcher.matches(EPSILON, i)) {
-                // If you are going to a state that has already been visited in an epsilon transition, you might be in a 
-                // loop. So don't follow it again. It's possible to create an epsilon loop with (|)*
-                if (!memory.EPSILON_VISITED.includes(toState.name)) {
-                    backtracked = false;
-                    const copyMemory = JSON.parse(JSON.stringify(memory));
-                    copyMemory.EPSILON_VISITED.push(currentState.name);
-                    // It's an epsilon transition so the string doesn't change and 'i' isn't updated
-                    if (DEBUG) console.log(`Added to stack ${currentState.name} -> ${toState.name} with input EPSILON`);
-                    stack.push({string: remainingString, i: i, currentState: toState, memory: copyMemory, sourceState: currentState.name});
-                } 
-            }
-        }
-
-        return  {stack, finished: false, memory, currentState, backtracked, sourceState, pos: i};
     }
 
     iterativeCompute(string, sourcePos) {
@@ -333,9 +294,9 @@ export class EngineNFA {
                 }
             }
         }
-        const memory = {}; //TODO Pulir esto
+        const memory = {};
         memory.success = false;
-        memory.endingPosition = sourcePos+string.length; //TODO testrear esto
+        memory.endingPosition = sourcePos+string.length; 
         return memory;
     }
 

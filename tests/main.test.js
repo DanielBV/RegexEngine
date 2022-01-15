@@ -4,35 +4,21 @@ import { EngineNFA } from '../src/engine/nfa';
 import { NFARegex } from '../src/engine/regex';
 import parseRegex from '../src/grammar/parser';
 
-class AlgorithmWrapper {
-  getBuilder() {
-    return null;
-  }
-
-  hasMatched() {
-    return false;
-  }
-}
-class NFTWrapper extends AlgorithmWrapper {
-  getBuilder() {
-    return new ConversionBuilder(() => new EngineNFA())
-  }
-
-  hasMatched(computedResult) {
-    return computedResult.success;
+/**
+ * This tests the NFA computation algorithms. This is different from findFirsTMatch and firstAllMatches. 
+ * The computation algorithms only tests beginning in the first position of the string (a.k.a it has an implicit ^ anchor) 
+ */
+function testCase(regex, string, result) {
+  for (const iterative of [true, false]) {
+    it (`Test regex '${regex}' with string '${string}' - ${iterative ? "iterative" : "recursive"}`, () => {
+      const ast = parseRegex(regex);
+      const cb  = new ConversionBuilder(() => new EngineNFA())
+      const nfa = cb.regexToNFA(ast);
+      const actual = iterative ? nfa.iterativeCompute(string, 0) : nfa.compute(string);
+      expect(actual.success).toBe(result);
+    });
   }
 }
-
-function testCase(algorithm, regex, string, result) {
-  it (`Test regex '${regex}' with string '${string}' and algorithm ${algorithm.constructor.name}`, () => {
-    const ast = parseRegex(regex);
-    const cb = algorithm.getBuilder();
-    const nfa = cb.regexToNFA(ast);
-    expect(algorithm.hasMatched(nfa.compute(string))).toBe(result);
-  });
-}
-
-const ALGORITHMS = [new NFTWrapper()];
 
 describe('test basic regex', () => {
   const CASES = [
@@ -91,11 +77,9 @@ describe('test basic regex', () => {
     ["^a$", "ab", false],
     ["a(|)*", "a", true], // An epsilon loop (a.k.a dangerous)
   ];
-  for (const algorithm of ALGORITHMS) {
     for (const [regex, string, result] of CASES) {
-      testCase(algorithm, regex, string, result);
+      testCase(regex, string, result);
     }
-  }  
 });
 
 describe('Regex escaped characters', () => {
@@ -118,10 +102,8 @@ describe('Regex escaped characters', () => {
     ["\\^", "^", true],
     ["\\$", "$", true],
   ];
-  for (const algorithm of ALGORITHMS) {
     for (const [regex, string, result] of CASES) {
-      testCase(algorithm, regex, string, result);
-    }
+      testCase(regex, string, result);
   }  
 });
 
@@ -132,11 +114,9 @@ describe('Dot Matcher', () => {
     [".+", "\n", false],
     [".+", "\r", false],
   ];
-  for (const algorithm of ALGORITHMS) {
     for (const [regex, string, result] of CASES) {
-      testCase(algorithm, regex, string, result);
-    }
-  }  
+      testCase(regex, string, result);
+    }  
 });
 
 describe('Regex character classes', () => {
@@ -178,11 +158,9 @@ describe('Regex character classes', () => {
   whitespaces.forEach(x => WHITESPACE_CASES.push(["\\S", x, false]));
   CASES.push(...WHITESPACE_CASES);
 
-  for (const algorithm of ALGORITHMS) {
-    for (const [regex, string, result] of CASES) {
-      testCase(algorithm, regex, string, result);
-    }
-  }  
+  for (const [regex, string, result] of CASES) {
+    testCase(regex, string, result);
+  }
 });
 
 
@@ -201,17 +179,18 @@ describe('Test capture groups', () => {
     //Non capturing group
     ["((?:ab)+)", "abab", [{group:0, txt: "abab"},{group: 1, txt: "abab"}]],
     ["((a))+", "aa", [{group:0, txt: "aa"},{group: 1, txt: "a"}, {group: 2, txt: "a"}]],
-  ]
-
-    for (const [regex, string, result] of CASES) {
-      it (`- regex: '${regex}', string: '${string}', expected: ${JSON.stringify(result)}`, () => {
-        const re = new NFARegex(regex);
-        const match = re.findFirstMatch(string);
-        expect(Object.keys(match.groups()).length).toBe(result.length)
-        for (const group of result) {
-          expect(match.group(group.group)).toBe(group.txt);
-        }
-      });
+  ];
+    for (const iterative of [true, false]) {
+      for (const [regex, string, result] of CASES) {
+        it (`- regex: '${regex}', string: '${string}', expected: ${JSON.stringify(result)} - ${iterative ? "itertive" : "recursive"}`, () => {
+          const re = new NFARegex(regex, iterative);
+          const match = re.findFirstMatch(string);
+          expect(Object.keys(match.groups()).length).toBe(result.length)
+          for (const group of result) {
+            expect(match.group(group.group)).toBe(group.txt);
+          }
+        });
+      }
     }
 });
 
@@ -222,16 +201,18 @@ describe('Test regex class', () => {
       ["^a$", "ba", null],
       ["a", "ba", {groups: {0: "a"}, start: 1, end: 2}],
     ];
-    for (const [regex, string, result] of CASES) {
-      const re = new NFARegex(regex);
-      const match = re.findFirstMatch(string);
-      if (result === null) expect(match).toBe(result);
-      else {
-        expect(match.start).toBe(result.start);
-        expect(match.end).toBe(result.end);
-        expect(Object.keys(match.groups()).length).toBe(Object.keys(result.groups).length);
-        for (const key in result.groups) 
-          expect(match.group(key)).toBe(result.groups[key]);
+    for (const iterative of [true, false]) {
+      for (const [regex, string, result] of CASES) {
+        const re = new NFARegex(regex, iterative);
+        const match = re.findFirstMatch(string);
+        if (result === null) expect(match).toBe(result);
+        else {
+          expect(match.start).toBe(result.start);
+          expect(match.end).toBe(result.end);
+          expect(Object.keys(match.groups()).length).toBe(Object.keys(result.groups).length);
+          for (const key in result.groups) 
+            expect(match.group(key)).toBe(result.groups[key]);
+        }
       }
     }
   });
@@ -247,19 +228,21 @@ describe('Test regex class', () => {
       ["(.*?)", "foo", []],
       ["a*", "aabaaa", [{groups: {0: "aa"}, start: 0, end: 2}, {groups: {0: "aaa"}, start: 3, end: 6}]],
     ];
-    for (const [regex, string, result] of CASES) {
-      it (`- regex: '${regex}', string: '${string}', expected: ${JSON.stringify(result)}`, () => {
-        const re = new NFARegex(regex);
-        const matches = re.findAllMatches(string);
-        expect(matches.length).toBe(result.length);
-        for (let i = 0; i < matches.length; i++) {
-          expect(matches[i].start).toBe(result[i].start);
-          expect(matches[i].end).toBe(result[i].end);
-          expect(Object.keys(matches[i].groups()).length).toBe(Object.keys(result[i].groups).length);
-          for (const key in result[i].groups) 
-            expect(matches[i].group(key)).toBe(result[i].groups[key]);
-        }
-      });
+    for (const iterative of [true, false]) {
+      for (const [regex, string, result] of CASES) {
+        it (`- regex: '${regex}', string: '${string}', expected: ${JSON.stringify(result)} - ${iterative ? "iterative" : "recursive"}`, () => {
+          const re = new NFARegex(regex);
+          const matches = re.findAllMatches(string, iterative);
+          expect(matches.length).toBe(result.length);
+          for (let i = 0; i < matches.length; i++) {
+            expect(matches[i].start).toBe(result[i].start);
+            expect(matches[i].end).toBe(result[i].end);
+            expect(Object.keys(matches[i].groups()).length).toBe(Object.keys(result[i].groups).length);
+            for (const key in result[i].groups) 
+              expect(matches[i].group(key)).toBe(result[i].groups[key]);
+          }
+        });
+      }
     }
   });
   

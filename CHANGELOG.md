@@ -1,5 +1,11 @@
 
 # Changelog
+# 1.4.1
+* Added warning to the animation page that states the animation only works for a single computation
+* Fixed bug that caused that didn't allowed the user to empty the regex input due to a null exception.
+* Fixed bug that cause the string input to disappear if the user wrote something before writing a regex and then added the regex
+* Refactors and cleaning
+
 # 1.4.0
 * Added the animation page (it was programmed kind of quickly so it still needs some cleaning)
 

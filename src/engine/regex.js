@@ -30,16 +30,21 @@ export class Match {
 }
 
 export class NFARegex {
-    constructor (regex) {
+    constructor (regex, iterative=true) {
         this.source = regex;
         const ast = parseRegex(regex);
         const cb = new ConversionBuilder( () => new EngineNFA());
         this.nfa = cb.regexToNFA(ast);
+        this.iterative = iterative;
+    }
+
+    _compute(string, i) {
+        return this.iterative ? this.nfa.iterativeCompute(string, i) : this.nfa.compute(string, i);
     }
 
     findFirstMatch(string) {
         for (let i = 0;  i < string.length; i++) {
-            const r = this.nfa.compute(string.substring(i), i);
+            const r = this._compute(string.substring(i), i);
             if (r.success) {
                 const match =  Match.fromNFAResult(string, i, r);
                 if (match.start !== match.end) 
@@ -55,7 +60,7 @@ export class NFARegex {
     findAllMatches(string) {
         const matches = [];
         for (let i = 0;  i < string.length; i++) {
-           const r = this.nfa.iterativeCompute(string.substring(i), i);
+           const r = this._compute(string.substring(i), i);
            if (r.success) {
                const match = Match.fromNFAResult(string, i, r);
                // This can be false when it matches "nothing", like with optional parameters

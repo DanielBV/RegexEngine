@@ -35,7 +35,7 @@ export default class MainPage extends React.Component {
 
     parseRegex(regex) {
         try {
-            const _regex = new NFARegex(regex);
+            const _regex = new NFARegex(regex, true);
             const dot = nfaToDot(_regex.nfa);
             return {valid: true, regex: _regex, dot};
         } catch (e) {
