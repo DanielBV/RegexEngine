@@ -57,32 +57,30 @@ export class ConversionBuilder {
         this.nfaFactory = nfaFactory;
     }
 
-    regexToNFA(regexAST, resetNumbers=true, isCapturingGroup=null) {
-        if (regexAST instanceof RegexAlternative) 
-            return this._alternativeToNFA(regexAST,resetNumbers, isCapturingGroup);
-        else 
-            return this._singleRegexToNFA(regexAST, resetNumbers, isCapturingGroup);
+    regexToNFA(regexAST) {
+        resetStateNumbers();
+        resetGroupNumbers();
+        return this._regexToNFA(regexAST, null);
     }
 
-    _singleRegexToNFA(regexAST, resetNumbers=true, capturingGroupNumber=null) {
+    _regexToNFA(regexAST, capturingGroupNumber=null) {
+        if (regexAST instanceof RegexAlternative) 
+            return this._alternativeToNFA(regexAST, capturingGroupNumber);
+        else 
+            return this._singleRegexToNFA(regexAST, capturingGroupNumber);
+    }
+
+    _singleRegexToNFA(regexAST, capturingGroupNumber=null) {
         let nfa = null;
-        if (resetNumbers) {
-            resetStateNumbers();
-            resetGroupNumbers();
-        }
         let isFirst = true;
         for (const c of regexAST.subpatterns) {
             let baseBuilder, base, baseIsCapturing, namedGroup = null;
             if (c.child instanceof AtomicPattern) {
                 baseBuilder = () => this._atomicPatternNFA(c.child.char);
-            } else if (c.child instanceof RegexAlternative) {  // Groups
+            } else if (c.child instanceof RegexAlternative || c.child instanceof Regex) {  // Groups
                 baseIsCapturing = c.child.isCapturingGroup();
                 namedGroup = c.child.groupName;
-                baseBuilder = (groupNumber) => this._alternativeToNFA(c.child, false, groupNumber);
-            } else if (c.child instanceof Regex) { // Groups
-                baseIsCapturing = c.child.isCapturingGroup();
-                namedGroup = c.child.groupName;
-                baseBuilder = (groupNumber) => this.regexToNFA(c.child, false, groupNumber);
+                baseBuilder = (groupNumber) => this._regexToNFA(c.child, groupNumber);
             } else if (c.child instanceof DotPattern) {
                 baseBuilder = () => this._dotPatternNFA();
             } else if (c.child instanceof CharacterClass) {
@@ -112,10 +110,7 @@ export class ConversionBuilder {
             if (c.quantifier === ASTERISK || c.quantifier === LAZY_ASTERISK) {
                 base = this._asterisk(() => baseBuilder(baseIsCapturing ? groupBuilder() : null), c.quantifier === LAZY_ASTERISK);
             } else if (c.quantifier === PLUS || c.quantifier === LAZY_PLUS) {
-                const group = baseIsCapturing ? groupBuilder() : null;
-                base = baseBuilder(group);
-                const extraPart = this._asterisk(() => EngineNFA.clone(base, () => newState()), c.quantifier === LAZY_PLUS);
-                base.thompsonAppendNFA(extraPart, base.endingStates[0]);
+                base = this._plus(() => baseBuilder(baseIsCapturing ? groupBuilder() : null), c.quantifier === LAZY_PLUS);
             } else if (c.quantifier === OPTIONAL || c.quantifier === LAZY_OPTIONAL) {
                 base = baseBuilder(baseIsCapturing ? groupBuilder() : null);
                 if (c.quantifier === LAZY_OPTIONAL)
@@ -135,6 +130,14 @@ export class ConversionBuilder {
     }
 
     _asterisk(builder, lazy) {
+        return this._asteriskplus(builder, lazy, true);
+    }
+
+    _plus(builder, lazy) {
+        return this._asteriskplus(builder, lazy, false);
+    }
+
+    _asteriskplus(builder, lazy, asterisk) {
         const newInit = newState();
         const base = builder();
         const newEnd = newState();
@@ -144,7 +147,7 @@ export class ConversionBuilder {
         // - If base.endingStates[0] -> base.initialState goes first, it's greedy 
         // - If base.endingStates[0] -> newEnd goes first, it's non greedy
         if (lazy) {
-            base.addTransition(newInit, newEnd, EPSILON_MATCHER);
+            if (asterisk) base.addTransition(newInit, newEnd, EPSILON_MATCHER);
             base.addTransition(newInit, base.initialState, EPSILON_MATCHER);
             base.addTransition(base.endingStates[0], newEnd, EPSILON_MATCHER);
             base.addTransition(base.endingStates[0], base.initialState, EPSILON_MATCHER);
@@ -152,7 +155,7 @@ export class ConversionBuilder {
             base.addTransition(newInit, base.initialState, EPSILON_MATCHER);
             base.addTransition(base.endingStates[0], base.initialState, EPSILON_MATCHER);
             base.addTransition(base.endingStates[0], newEnd, EPSILON_MATCHER);
-            base.addTransition(newInit, newEnd, EPSILON_MATCHER);
+            if (asterisk) base.addTransition(newInit, newEnd, EPSILON_MATCHER);
         }
       
         base.setInitialState(newInit);
@@ -192,19 +195,14 @@ export class ConversionBuilder {
         return nfa;
     }
 
-    _alternativeToNFA(alternativeAst, resetNumbers=true, capturingGroupNumber=null) {
-        if (resetNumbers) {
-            resetStateNumbers();
-            resetGroupNumbers();
-        }
+    _alternativeToNFA(alternativeAst, capturingGroupNumber=null) {
         const nfa = this.nfaFactory();
         const start = newState();
         nfa.addState(start);
         nfa.setInitialState(start);
-        nfa.setEndingStates([]);
         const endingStates = [];
         for (let i = 0; i < alternativeAst.alternatives.length; i++) {
-            const tmp = this.regexToNFA(alternativeAst.alternatives[i], false);
+            const tmp = this._regexToNFA(alternativeAst.alternatives[i]);
             endingStates.push(...tmp.endingStates);
             nfa.thompsonAppendNFA(tmp, start);
         }

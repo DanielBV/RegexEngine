@@ -1,3 +1,4 @@
+import {CharacterMatcher} from './matchers';
 
 const DEBUG = false;
 export const EPSILON = Symbol("epsilon");
@@ -83,18 +84,19 @@ export class EngineNFA {
     }
 
      /**
+     * Method in EngineNFA. Appends 'nfa' to 
      * It assumes that the names of the states of the nfa and this are unique
      * @param {*} nfa 
      * @param {*} starting 
      */
-    appendNFA(nfa, startingName, matcher=new CharacterMatcher(EPSILON)) {
+    appendNFA(nfa, unionState, matcher=new CharacterMatcher(EPSILON)) {
         for (const s in nfa.states) {
             this.states[s] = nfa.states[s];
         } 
-        this.addTransition(startingName, nfa.initialState, matcher);
+        this.addTransition(unionState, nfa.initialState, matcher);
         // If the joint is and end state, then the end states of the appended nfa are also end states of the fusion.
-        if (this.endingStates.includes(startingName)) {
-            this.endingStates.splice(this.endingStates.indexOf(startingName),1, ...nfa.endingStates);
+        if (this.endingStates && this.endingStates.includes(unionState)) {
+            this.endingStates.splice(this.endingStates.indexOf(unionState),1, ...nfa.endingStates);
         }
     }
 
@@ -126,7 +128,7 @@ export class EngineNFA {
         for (const group of otherNfa.states[otherNfa.initialState].endsGroups)
             this.states[unionState].addEndGroup(group);
         // If the unionState is and end state, then the end states of the appended nfa are also end states of the fusion.
-        if (this.endingStates.includes(unionState)) {
+        if (this.endingStates && this.endingStates.includes(unionState)) {
             this.endingStates.splice(this.endingStates.indexOf(unionState),1, ...otherNfa.endingStates);
         }
     }
@@ -258,11 +260,7 @@ export class EngineNFA {
         stack.push({string, i: sourcePos, currentState:  this.states[this.initialState], memory: {ACTIVE_GROUPS: {}, GROUP_MATCHES:{}, EPSILON_VISITED: []}})
 
         while (stack.length) {
-            const current = stack.pop();
-            const currentState = current.currentState;
-            const remainingString = current.string;
-            const memory = current.memory;
-            const i = current.i;
+            const {currentState, string: remainingString, memory, i} = stack.pop();
             this.computeGroups(currentState, memory, i);
             if (this.endingStates.includes(currentState.name)) {
                 // The closure can't be used here because then it wouldn't compute the groups of the final state. 
@@ -273,7 +271,8 @@ export class EngineNFA {
                 return memory;
             }
     
-            const input = remainingString[0];
+            const input = remainingString[0]; //TODO no recuerdo por qué era así esto.
+            // Transitions are pushed in reverse order because we want the first transition to be in the last position of the stack
             for (let c = currentState.transitions.length-1; c >= 0; c--) {
                 const [matcher, toState] = currentState.transitions[c];
                 if (matcher.matches(input, i)) { // Non-epsilon

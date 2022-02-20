@@ -1,5 +1,9 @@
 
 # Changelog
+# 1.4.2 
+* Changed the way `+` quantifier was translated to NFA. Previously I defined `a+` as `aa*`, but this is unnecessary and duplicates states. It's easier to just do the 
+same pattern as a `*` but without the epsilon transition from init to end.
+* Refactoring
 # 1.4.1
 * Added warning to the animation page that states the animation only works for a single computation
 * Fixed bug that caused that didn't allowed the user to empty the regex input due to a null exception.
