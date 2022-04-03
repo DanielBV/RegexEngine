@@ -15,7 +15,7 @@ function stateBack() {
     i -= 1;
 }
 
-let g = 1;
+let g = 0;
 function newGroup() {
     const c = g;
     g++;
@@ -23,7 +23,7 @@ function newGroup() {
 }
 
 function resetGroupNumbers() {
-    g = 1;
+    g = 0;
 }
 
 function resetStateNumbers() {
@@ -60,27 +60,27 @@ export class ConversionBuilder {
     regexToNFA(regexAST) {
         resetStateNumbers();
         resetGroupNumbers();
-        return this._regexToNFA(regexAST, null);
+        return this._regexToNFA(regexAST, 0);
     }
 
-    _regexToNFA(regexAST, capturingGroupNumber=null) {
+    _regexToNFA(regexAST) {
         if (regexAST instanceof RegexAlternative) 
-            return this._alternativeToNFA(regexAST, capturingGroupNumber);
+            return this._alternativeToNFA(regexAST);
         else 
-            return this._singleRegexToNFA(regexAST, capturingGroupNumber);
+            return this._singleRegexToNFA(regexAST);
     }
 
-    _singleRegexToNFA(regexAST, capturingGroupNumber=null) {
+    _singleRegexToNFA(regexAST) {
         let nfa = null;
         let isFirst = true;
+        // You have to define a concrete group name before going to any subnode so that the order of the group numbers is ascending.
+        const groupName = regexAST.isCapturingGroup() ? regexAST.groupName || newGroup() : null;
         for (const c of regexAST.subpatterns) {
-            let baseBuilder, base, baseIsCapturing, namedGroup = null;
+            let baseBuilder, base;
             if (c.child instanceof AtomicPattern) {
                 baseBuilder = () => this._atomicPatternNFA(c.child.char);
             } else if (c.child instanceof RegexAlternative || c.child instanceof Regex) {  // Groups
-                baseIsCapturing = c.child.isCapturingGroup();
-                namedGroup = c.child.groupName;
-                baseBuilder = (groupNumber) => this._regexToNFA(c.child, groupNumber);
+                baseBuilder = () => this._regexToNFA(c.child);
             } else if (c.child instanceof DotPattern) {
                 baseBuilder = () => this._dotPatternNFA();
             } else if (c.child instanceof CharacterClass) {
@@ -91,10 +91,6 @@ export class ConversionBuilder {
                 baseBuilder = () => this._oneStepNFA(new EndOfInputMatcher());
             else if (c.child instanceof CaretAnchor)
                 baseBuilder = () => this._oneStepNFA(new StartOfInputMatcher());
-    
-            // Lazy to avoid creating unnecessary groups, since newGroup upgrades an internal counter
-            const groupBuilder = () => namedGroup ? namedGroup : newGroup();
-    
             /* This is a minor detail to make sure the states name don't skip any name 
                 Doing it shouldn't have any effect on the final result, but it generates a prettier diagram.
                 The basics of this is: 
@@ -108,24 +104,25 @@ export class ConversionBuilder {
             else stateBack();
 
             if (c.quantifier === ASTERISK || c.quantifier === LAZY_ASTERISK) {
-                base = this._asterisk(() => baseBuilder(baseIsCapturing ? groupBuilder() : null), c.quantifier === LAZY_ASTERISK);
+                base = this._asterisk(() => baseBuilder(), c.quantifier === LAZY_ASTERISK);
             } else if (c.quantifier === PLUS || c.quantifier === LAZY_PLUS) {
-                base = this._plus(() => baseBuilder(baseIsCapturing ? groupBuilder() : null), c.quantifier === LAZY_PLUS);
+                base = this._plus(() => baseBuilder(), c.quantifier === LAZY_PLUS);
             } else if (c.quantifier === OPTIONAL || c.quantifier === LAZY_OPTIONAL) {
-                base = baseBuilder(baseIsCapturing ? groupBuilder() : null);
+                base = baseBuilder();
                 if (c.quantifier === LAZY_OPTIONAL)
                     base.unshiftTransition(base.initialState, base.endingStates[0], EPSILON_MATCHER);
                 else 
                     base.addTransition(base.initialState, base.endingStates[0], EPSILON_MATCHER);
             } else {
-                base = baseBuilder(baseIsCapturing ? groupBuilder() : null);
+                base = baseBuilder();
             }
             if (nfa === null) 
                 nfa = base 
             else 
+                //TODO no tengo muy claro si esto es peligroso porque podría cargarse el primer group? O lo he teniddo en cuenta
                 nfa.thompsonAppendNFA(base, nfa.endingStates[0]);
         }
-        if (capturingGroupNumber !== null) nfa.addGroup(nfa.initialState, nfa.endingStates[0], capturingGroupNumber); 
+        if (groupName !== null) nfa.addGroup(nfa.initialState, nfa.endingStates[0], groupName); 
         return nfa;
     }
 
@@ -195,7 +192,9 @@ export class ConversionBuilder {
         return nfa;
     }
 
-    _alternativeToNFA(alternativeAst, capturingGroupNumber=null) {
+    _alternativeToNFA(alternativeAst) {
+         // You have to define a concrete group name before going to any subnode so that the order of the group numbers is ascending.
+         const groupName = alternativeAst.isCapturingGroup() ? alternativeAst.groupName || newGroup() : null;
         const nfa = this.nfaFactory();
         const start = newState();
         nfa.addState(start);
@@ -210,7 +209,7 @@ export class ConversionBuilder {
         nfa.addState(end);
         endingStates.forEach(x => nfa.addTransition(x, end, EPSILON_MATCHER));
         nfa.setEndingStates([end]);
-        if (capturingGroupNumber !== null) nfa.addGroup(start, end, capturingGroupNumber);
+        if (groupName !== null) nfa.addGroup(start, end, groupName);
         return nfa;
     }
 }

@@ -15,7 +15,6 @@ export class Match {
         const groups = {};
         if (r.success) {
             Object.values(r.GROUP_MATCHES).forEach(([i, start, end]) => groups[i] = source.substring(start,end));
-            groups[0] = source.substring(start, r.endingPosition);
         }
         return new Match(source, start, r.endingPosition, groups);
     }

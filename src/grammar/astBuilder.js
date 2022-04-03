@@ -13,7 +13,7 @@ export const LAZY_OPTIONAL = Symbol("??");
 export class AstBuilder extends RegexVisitor {
 
     visitMain(ctx) {
-        return this.visit(ctx.regex()).nonCapturing();
+        return this.visit(ctx.regex());
     }
 
     visitRegex(ctx) {
@@ -21,7 +21,10 @@ export class AstBuilder extends RegexVisitor {
             return new Regex(this.visit(ctx.expr()));
         else {
             const main = ctx.expr().length === 0 ? this._epsilonAlternative() : new Regex(this.visit(ctx.expr()));
-            return new RegexAlternative(main,  ...this.visit(ctx.alternative()));
+            const alternatives = this.visit(ctx.alternative());
+            main.nonCapturing();
+            alternatives.forEach(x => x.nonCapturing());
+            return new RegexAlternative(main,  ...alternatives);
         }
     }
 

@@ -38,19 +38,6 @@ export default class AnimationPage extends React.Component {
         clearInterval(this.interval);
     }
 
-    getGroups(memory, source, currentPos) {
-        const groups = {};
-        Object.keys(memory.ACTIVE_GROUPS).forEach(x => groups[x] = source.substring(memory.ACTIVE_GROUPS[x],currentPos));
-        Object.values(memory.GROUP_MATCHES).forEach(([i, start, end]) => {
-            if (memory.ACTIVE_GROUPS[i] && memory.ACTIVE_GROUPS[i] > start) {
-                // The group is being overriden at the moment
-            } else {
-                // The group is finished
-                groups[i] = source.substring(start, end);
-            }
-        });
-        return groups;
-    }
 
 
 
