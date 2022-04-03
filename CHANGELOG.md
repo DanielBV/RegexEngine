@@ -1,5 +1,8 @@
 
 # Changelog
+# 1.4.3
+* Refactored groups to avoid treating group 0 as a special group.
+    * Now the first and last nodes of the NFA always start and end group 0.
 # 1.4.2 
 * Changed the way `+` quantifier was translated to NFA. Previously I defined `a+` as `aa*`, but this is unnecessary and duplicates states. It's easier to just do the 
 same pattern as a `*` but without the epsilon transition from init to end.
