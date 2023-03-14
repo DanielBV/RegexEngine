@@ -34,7 +34,7 @@ export class StartOfInputMatcher extends Matcher {
     }
 
     get label() {
-        return "$";
+        return "^";
     }
 }
 

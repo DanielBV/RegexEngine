@@ -1,5 +1,7 @@
 
 # Changelog
+# 1.4.4
+* Minor path: The label of start of input transitions was shown as `$` instead of `^`
 # 1.4.3
 * Refactored groups to avoid treating group 0 as a special group.
     * Now the first and last nodes of the NFA always start and end group 0.
