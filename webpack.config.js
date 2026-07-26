@@ -3,26 +3,27 @@ const webpack = require('webpack');
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 module.exports = [{
     entry: {
-        page1: path.join(__dirname, "/src/index.js"),
-        page2: path.join(__dirname, "/src/animation.js"),
-        page3: path.join(__dirname, "/src/lexerAnimation.js"),
-        page4: path.join(__dirname, "/src/parserComparison.js"),
+        page1: path.join(__dirname, "/src/index.tsx"),
+        page2: path.join(__dirname, "/src/animation.tsx"),
+        page3: path.join(__dirname, "/src/lexerAnimation.tsx"),
+        page4: path.join(__dirname, "/src/parserComparison.tsx"),
     },
    output: {
     filename: "[name]/build.js",
     path: path.join(__dirname, "/docs")},
    module:{
        rules:[{
-          test: /\.js$/,
+          test: /\.tsx?$/,
           exclude: /node_modules/,
-          loader: "babel-loader"
+          loader: "ts-loader"
        },
        {
-        test: /\.css$/i,        
-        use: ["style-loader", "css-loader"],      
+        test: /\.css$/i,
+        use: ["style-loader", "css-loader"],
         },
     ],
    },
+   resolve: { extensions: [".tsx", ".ts", ".js"], fallback: { fs: false } },
    plugins:[
     new HtmlWebpackPlugin({
     template: './src/index.html',
@@ -48,7 +49,6 @@ module.exports = [{
     'process.env.VERSION': JSON.stringify(require("./package.json").version)
 })
    ],
-   resolve: { fallback: { fs: false } },
    devtool: 'source-map'
 }
 ];
