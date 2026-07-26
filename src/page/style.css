@@ -168,3 +168,70 @@ body, #page, #root{
     color: #6c757d;
     font-size: 13px;
 }
+
+.lexerRulesSection{
+    flex: 0 0 auto;
+    max-height: 40%;
+    overflow: auto;
+    margin-bottom: 8px;
+}
+
+.ruleTable td{
+    vertical-align: middle;
+}
+
+.ruleTable button{
+    margin-right: 4px;
+}
+
+.parserBody{
+    flex: 1 1 auto;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    margin: 10px;
+}
+
+.parserColumns{
+    flex: 1 1 auto;
+    display: flex;
+    gap: 10px;
+    overflow: hidden;
+    margin-top: 8px;
+}
+
+.parserLane{
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    border: gray solid 1px;
+    padding: 8px;
+    overflow: auto;
+}
+
+.parserLaneDescription{
+    color: #6c757d;
+    font-size: 12px;
+    margin-bottom: 6px;
+}
+
+.parserStepControls{
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.parserConsumed, .parserAction, .parserCallStack, .parserStack{
+    font-size: 13px;
+    margin-bottom: 4px;
+    word-wrap: break-word;
+}
+
+.parserTree{
+    flex: 1 1 auto;
+    overflow: auto;
+    border-top: gray solid 1px;
+    margin-top: 6px;
+}

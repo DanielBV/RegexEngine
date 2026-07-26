@@ -5,6 +5,8 @@ module.exports = [{
     entry: {
         page1: path.join(__dirname, "/src/index.js"),
         page2: path.join(__dirname, "/src/animation.js"),
+        page3: path.join(__dirname, "/src/lexerAnimation.js"),
+        page4: path.join(__dirname, "/src/parserComparison.js"),
     },
    output: {
     filename: "[name]/build.js",
@@ -31,6 +33,16 @@ module.exports = [{
     template: './src/animation.html',
     filename: 'animation.html',
     chunks: ['page2']
+  }),
+  new HtmlWebpackPlugin({
+    template: './src/lexerAnimation.html',
+    filename: 'lexerAnimation.html',
+    chunks: ['page3']
+  }),
+  new HtmlWebpackPlugin({
+    template: './src/parserComparison.html',
+    filename: 'parserComparison.html',
+    chunks: ['page4']
   }),
   new webpack.DefinePlugin({
     'process.env.VERSION': JSON.stringify(require("./package.json").version)
