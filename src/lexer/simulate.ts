@@ -59,9 +59,9 @@ export function bestAccepting(states: Iterable<State>, pos: number, tokenTypeByE
  *  `null` when no rule matches anything starting at `startPos`.
  */
 export function nextToken(lexerNfa: LexerNFA, text: string, startPos: number): NextTokenResult | null {
-    const { nfa, tokenTypeByEndState } = lexerNfa;
+    const { tokenTypeByEndState } = lexerNfa;
 
-    let current = epsilonClosure([nfa.states[nfa.initialState as string]], startPos);
+    let current = epsilonClosure([lexerNfa.states[lexerNfa.initialState as string]], startPos);
     let best = bestAccepting(current, startPos, tokenTypeByEndState);
 
     let pos = startPos;

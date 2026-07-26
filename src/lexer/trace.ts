@@ -31,10 +31,10 @@ export interface TraceTokenizeResult {
  * not for actual tokenization (see nextToken/Lexer.tokenize for that).
  */
 function traceNextToken(lexerNfa: LexerNFA, text: string, startPos: number): { best: NextTokenResult | null, frames: TraceFrame[] } {
-    const { nfa, tokenTypeByEndState } = lexerNfa;
+    const { tokenTypeByEndState } = lexerNfa;
     const frames: TraceFrame[] = [];
 
-    let current = epsilonClosure([nfa.states[nfa.initialState as string]], startPos);
+    let current = epsilonClosure([lexerNfa.states[lexerNfa.initialState as string]], startPos);
     let best = bestAccepting(current, startPos, tokenTypeByEndState);
     frames.push({ pos: startPos, activeStates: stateNames(current), best });
 

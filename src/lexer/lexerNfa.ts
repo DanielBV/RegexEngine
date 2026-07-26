@@ -1,6 +1,6 @@
 import parseRegex from "../grammar/parser";
 import { ConversionBuilder } from "../engine/conversions";
-import { EngineNFA, EPSILON } from "../engine/nfa";
+import { EngineNFA, EPSILON, NFA } from "../engine/nfa";
 import { CharacterMatcher } from "../engine/matchers";
 
 export interface TokenRule {
@@ -10,12 +10,24 @@ export interface TokenRule {
 
 export interface TokenTag {
     name: string;
+    // We need to keep track of the priority to resolve ambiguity when the same token parses matches two rules
     priority: number;
 }
 
-export interface LexerNFA {
-    nfa: EngineNFA;
+/**
+ * The combined automaton backing a lexer: a plain NFA (no capturing groups,
+ * no backtracking compute methods - those are EngineNFA-specific and
+ * meaningless here) plus which token each accepting state belongs to.
+ * Simulated by simulate.ts's subset-construction nextToken, not by any
+ * EngineNFA method.
+ */
+export class LexerNFA extends NFA {
     tokenTypeByEndState: Record<string, TokenTag>;
+
+    constructor() {
+        super();
+        this.tokenTypeByEndState = {};
+    }
 }
 
 /**
@@ -38,12 +50,11 @@ export function buildLexerNFA(tokenRules: TokenRule[]): LexerNFA {
     let counter = 0;
     const nextName = () => `s${counter++}`;
 
-    const combined = new EngineNFA();
+    const combined = new LexerNFA();
     const start = nextName();
     combined.addState(start);
     combined.setInitialState(start);
 
-    const tokenTypeByEndState: Record<string, TokenTag> = {};
     const cb = new ConversionBuilder(() => new EngineNFA());
 
     tokenRules.forEach((rule, priority) => {
@@ -61,9 +72,9 @@ export function buildLexerNFA(tokenRules: TokenRule[]): LexerNFA {
         // _alternativeToNFA, _singleRegexToNFA) resolves to a single-ending
         // -state fragment.
         const [endState] = cloned.endingStates as string[];
-        tokenTypeByEndState[endState] = { name: rule.name, priority };
+        combined.tokenTypeByEndState[endState] = { name: rule.name, priority };
     });
 
-    combined.setEndingStates(Object.keys(tokenTypeByEndState));
-    return { nfa: combined, tokenTypeByEndState };
+    combined.setEndingStates(Object.keys(combined.tokenTypeByEndState));
+    return combined;
 }

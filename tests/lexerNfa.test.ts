@@ -22,13 +22,13 @@ describe("buildLexerNFA", () => {
         // Each rule's underlying NFA is built independently and would
         // normally start naming its states back at "q0" - this checks that
         // merging them didn't silently clobber another rule's states.
-        const { nfa } = buildLexerNFA(RULES);
+        const nfa = buildLexerNFA(RULES);
         const names = Object.keys(nfa.states);
         expect(new Set(names).size).toBe(names.length);
     });
 
     it("adds one epsilon transition from the shared start state per rule", () => {
-        const { nfa } = buildLexerNFA(RULES);
+        const nfa = buildLexerNFA(RULES);
         const startState = nfa.states[nfa.initialState as string];
         expect(startState.transitions.length).toBe(RULES.length);
     });

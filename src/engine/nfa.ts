@@ -8,6 +8,8 @@ export type MatchInput = string | typeof EPSILON | undefined;
 export type GroupId = string | number;
 
 export interface Matcher {
+    // i: current position in the string being matched. Only StartOfInputMatcher
+    // uses it (to check i === 0 for '^'); every other matcher ignores it.
     matches(char: MatchInput, i?: number): boolean;
     readonly label: string;
 }
@@ -70,9 +72,14 @@ export class State {
 }
 
 /**
- * A NFA that has been modified to allow capturing groups. This would make it more like a transducer than an accepter
+ * The core automaton model shared by every flavor of NFA in this project:
+ * just states/initialState/endingStates plus the structural mutators needed
+ * to build them. No matching/simulation algorithm lives here - that's
+ * specific to each subclass (EngineNFA's backtracking + capturing-group
+ * compute methods, vs the lexer's subset-construction simulation in
+ * simulate.ts, which operates on a LexerNFA).
  */
-export class EngineNFA {
+export class NFA {
     states: Record<string, State>;
     initialState: string | null;
     endingStates: string[] | null;
@@ -109,7 +116,12 @@ export class EngineNFA {
     unshiftTransition(fromState: string, toState: string, matcher: Matcher) {
         this.states[fromState].unshiftTransition(this.states[toState], matcher);
     }
+}
 
+/**
+ * A NFA that has been modified to allow capturing groups. This would make it more like a transducer than an accepter
+ */
+export class EngineNFA extends NFA {
     compute(string: string, i: number = 0): ComputeMemory {
         if (DEBUG) console.log("----------------------------------------------------------------------------------------" + i);
         if (DEBUG) console.log(this);
@@ -132,7 +144,7 @@ export class EngineNFA {
      * Method in EngineNFA. Appends 'nfa' to
      * It assumes that the names of the states of the nfa and this are unique
      * @param {*} nfa
-     * @param {*} starting
+     * @param {*} unionState
      */
     appendNFA(nfa: EngineNFA, unionState: string, matcher: Matcher = new CharacterMatcher(EPSILON)) {
         for (const s in nfa.states) {
@@ -351,7 +363,7 @@ export class EngineNFA {
 
     /**
      *
-     * @param {*} nfa
+     * @param {*} original
      * @param {*} stateBuilder Function that Generates names of new states. Multiple class to this method must return different unique states
      */
     static clone(original: EngineNFA, stateBuilder: () => string): EngineNFA {

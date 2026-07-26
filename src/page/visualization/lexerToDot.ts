@@ -15,13 +15,13 @@ function escapeAndPrettify(name: string): string {
  * far" is highlighted in a second color.
  */
 export function lexerNfaToDot(lexerNfa: LexerNFA, frame?: TokenizeTraceFrame): string {
-    const { nfa, tokenTypeByEndState } = lexerNfa;
+    const { tokenTypeByEndState } = lexerNfa;
     const activeStates = new Set(frame ? frame.activeStates : []);
     const bestState = frame && frame.best
         ? Object.keys(tokenTypeByEndState).find((name) => tokenTypeByEndState[name].priority === (frame.best as NonNullable<typeof frame.best>).token.priority)
         : null;
 
-    const states = Object.keys(nfa.states).sort().reverse();
+    const states = Object.keys(lexerNfa.states).sort().reverse();
     const nodeDefinition = states.map((name) => {
         const tag = tokenTypeByEndState[name];
         const shape = tag ? "doublecircle" : "circle";
@@ -36,8 +36,8 @@ export function lexerNfaToDot(lexerNfa: LexerNFA, frame?: TokenizeTraceFrame): s
         rankdir=LR;
         "" [shape=none]
         ${nodeDefinition.join("\n")}
-        "" -> ${nfa.initialState}\n`;
-    for (const state of Object.values(nfa.states)) {
+        "" -> ${lexerNfa.initialState}\n`;
+    for (const state of Object.values(lexerNfa.states)) {
         for (const [matcher, toState] of state.transitions) {
             dot += `    ${state.name} -> ${toState.name} [label = "${escapeAndPrettify(matcher.label)}"]; \n`;
         }
